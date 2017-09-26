@@ -1,0 +1,22 @@
+sudo: required
+
+language: go
+
+go:
+  - go1.7
+  - go1.8
+  - go1.9
+  - tip
+
+install:
+  - go get -u github.com/golang/lint/golint
+  - go get -u golang.org/x/tools/cmd/goimports
+
+script:
+  - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...) | tee /dev/stderr)"
+  - test -z "$(golint ./... | tee /dev/stderr)"
+  - test -z "$(go vet -v ./... | tee /dev/stderr)"
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
