@@ -88,7 +88,7 @@ type Way struct {
 	ID      int64
 	Tags    map[string]string
 	Info    *Info
-	NodeIds []int64
+	NodeIDs []int64
 }
 
 // Member represents an element that

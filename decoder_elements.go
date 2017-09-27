@@ -94,7 +94,7 @@ func (c *context) decodeWays(nodes []*pbf.Way) []interface{} {
 		elements[i] = &Way{
 			ID:      node.GetId(),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
-			NodeIds: nodeIDs,
+			NodeIDs: nodeIDs,
 			Info:    c.decodeInfo(node.GetInfo()),
 		}
 	}
