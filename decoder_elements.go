@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/maguro/osm-pb-parser/pbf"
+	"github.com/maguro/pbfparser/pbf"
 )
 
 func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {

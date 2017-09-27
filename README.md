@@ -1,2 +1,2 @@
-# osm-pb-parser
+# pbfparser
 OpenStreetMap PBF golang parser
