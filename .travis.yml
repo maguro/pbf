@@ -15,6 +15,7 @@ install:
   - go get -u github.com/stretchr/testify/assert
 
 script:
+  - go install
   - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...) | tee /dev/stderr)"
   - test -z "$(golint ./... | tee /dev/stderr)"
   - test -z "$(go vet -v ./... | tee /dev/stderr)"
