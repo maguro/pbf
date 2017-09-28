@@ -14,7 +14,7 @@
 
 syntax = "proto2";
 
-package pbf;
+package protobuf;
 
 /* OSM Binary file format
 

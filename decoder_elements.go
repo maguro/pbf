@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbfparser
+package pbf
 
 import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/maguro/pbfparser/pbf"
+	"github.com/maguro/pbf/protobuf"
 )
 
 func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
-	pb := &pbf.PrimitiveBlock{}
+	pb := &protobuf.PrimitiveBlock{}
 	if err := proto.Unmarshal(buffer, pb); err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 	return elements, nil
 }
 
-func (c *context) decodeNodes(nodes []*pbf.Node) (elements []interface{}) {
+func (c *context) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
 	elements = make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Node{
@@ -54,7 +54,7 @@ func (c *context) decodeNodes(nodes []*pbf.Node) (elements []interface{}) {
 	return elements
 }
 
-func (c *context) decodeDenseNodes(nodes *pbf.DenseNodes) []interface{} {
+func (c *context) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
 	ids := nodes.GetId()
 	elements := make([]interface{}, len(ids))
 
@@ -80,7 +80,7 @@ func (c *context) decodeDenseNodes(nodes *pbf.DenseNodes) []interface{} {
 	return elements
 }
 
-func (c *context) decodeWays(nodes []*pbf.Way) []interface{} {
+func (c *context) decodeWays(nodes []*protobuf.Way) []interface{} {
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		refs := node.GetRefs()
@@ -101,7 +101,7 @@ func (c *context) decodeWays(nodes []*pbf.Way) []interface{} {
 	return elements
 }
 
-func (c *context) decodeRelations(nodes []*pbf.Relation) []interface{} {
+func (c *context) decodeRelations(nodes []*protobuf.Relation) []interface{} {
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Relation{
@@ -114,7 +114,7 @@ func (c *context) decodeRelations(nodes []*pbf.Relation) []interface{} {
 	return elements
 }
 
-func (c *context) decodeMembers(node *pbf.Relation) []Member {
+func (c *context) decodeMembers(node *protobuf.Relation) []Member {
 	memids := node.GetMemids()
 	memtypes := node.GetTypes()
 	memroles := node.GetRolesSid()
@@ -140,7 +140,7 @@ func (c *context) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	return tags
 }
 
-func (c *context) decodeInfo(info *pbf.Info) *Info {
+func (c *context) decodeInfo(info *protobuf.Info) *Info {
 	i := &Info{Visible: true}
 	if info != nil {
 		i.Version = info.GetVersion()
@@ -165,7 +165,7 @@ type context struct {
 	dateGranularity int32
 }
 
-func newContext(pb *pbf.PrimitiveBlock) *context {
+func newContext(pb *protobuf.PrimitiveBlock) *context {
 	return &context{
 		strings:         pb.GetStringtable().GetS(),
 		granularity:     pb.GetGranularity(),
@@ -192,7 +192,7 @@ type denseInfoContext struct {
 	visibilities    []bool
 }
 
-func (c *context) newDenseInfoContext(di *pbf.DenseInfo) *denseInfoContext {
+func (c *context) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
 	dic := &denseInfoContext{
 		dateGranularity: c.dateGranularity,
 		strings:         c.strings,
@@ -266,13 +266,13 @@ func (tic *tagsContext) decodeTags() map[string]string {
 }
 
 // decodeMemberType converts protobuf enum Relation_MemberType to a MemberType.
-func decodeMemberType(mt pbf.Relation_MemberType) MemberType {
+func decodeMemberType(mt protobuf.Relation_MemberType) MemberType {
 	switch mt {
-	case pbf.Relation_NODE:
+	case protobuf.Relation_NODE:
 		return NODE
-	case pbf.Relation_WAY:
+	case protobuf.Relation_WAY:
 		return WAY
-	case pbf.Relation_RELATION:
+	case protobuf.Relation_RELATION:
 		return RELATION
 	default:
 		panic("unrecognized member type")

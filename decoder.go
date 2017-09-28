@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbfparser
+package pbf
 
 import (
 	"bytes"
@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/maguro/pbfparser/pbf"
+	"github.com/maguro/pbf/protobuf"
 )
 
 const (
@@ -35,8 +35,8 @@ const (
 )
 
 type encoded struct {
-	header *pbf.BlobHeader
-	blob   *pbf.Blob
+	header *protobuf.BlobHeader
+	blob   *protobuf.Blob
 	err    error
 }
 
@@ -216,7 +216,7 @@ func (d *Decoder) Decode() (interface{}, error) {
 	return decoded.element, decoded.err
 }
 
-func (d *Decoder) readBlobHeader() (header *pbf.BlobHeader, err error) {
+func (d *Decoder) readBlobHeader() (header *protobuf.BlobHeader, err error) {
 	var size uint32
 	err = binary.Read(d.reader, binary.BigEndian, &size)
 	if err != nil {
@@ -228,7 +228,7 @@ func (d *Decoder) readBlobHeader() (header *pbf.BlobHeader, err error) {
 		return nil, err
 	}
 
-	header = &pbf.BlobHeader{}
+	header = &protobuf.BlobHeader{}
 	if err := proto.Unmarshal(d.buffer.Bytes(), header); err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (d *Decoder) readBlobHeader() (header *pbf.BlobHeader, err error) {
 	return header, nil
 }
 
-func (d *Decoder) readBlob(header *pbf.BlobHeader) (*pbf.Blob, error) {
+func (d *Decoder) readBlob(header *protobuf.BlobHeader) (*protobuf.Blob, error) {
 	size := header.GetDatasize()
 
 	d.buffer.Reset()
@@ -244,7 +244,7 @@ func (d *Decoder) readBlob(header *pbf.BlobHeader) (*pbf.Blob, error) {
 		return nil, err
 	}
 
-	blob := &pbf.Blob{}
+	blob := &protobuf.Blob{}
 	if err := proto.Unmarshal(d.buffer.Bytes(), blob); err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (d *Decoder) readBlob(header *pbf.BlobHeader) (*pbf.Blob, error) {
 	return blob, nil
 }
 
-func decode(header *pbf.BlobHeader, blob *pbf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
+func decode(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
 	var buffer []byte
 	switch {
 	case blob.Raw != nil:
@@ -298,7 +298,7 @@ func decode(header *pbf.BlobHeader, blob *pbf.Blob, zlibBuf *bytes.Buffer) ([]in
 }
 
 func parseOSMHeader(buffer []byte) (*Header, error) {
-	hb := &pbf.HeaderBlock{}
+	hb := &protobuf.HeaderBlock{}
 	if err := proto.Unmarshal(buffer, hb); err != nil {
 		return nil, err
 	}
