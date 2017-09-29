@@ -52,14 +52,15 @@ type pair struct {
 
 // Decoder reads and decodes OpenStreetMap PBF data from an input stream.
 type Decoder struct {
-	InputBufferSize   int
-	ZlibBufferSize    int
-	OutputBufferSize  int
-	DecodedBufferSize int
-	inputs            []chan<- encoded
-	outputs           []<-chan decoded
-	decoded           chan pair
-	start             sync.Once
+	InputBufferSize      int
+	ZlibBufferSize       int
+	OutputChannelLength  int
+	DecodedChannelLength int
+	inputs               []chan<- encoded
+	outputs              []<-chan decoded
+	decoded              chan pair
+	done                 chan struct{}
+	start                sync.Once
 
 	reader io.Reader
 	buffer *bytes.Buffer
@@ -70,12 +71,12 @@ type Decoder struct {
 // NewDecoder returns a new decoder that reads from r.
 func NewDecoder(r io.Reader) (*Decoder, error) {
 	decoder := &Decoder{
-		InputBufferSize:   16,
-		ZlibBufferSize:    initialBufferSize,
-		OutputBufferSize:  8,
-		DecodedBufferSize: 8000,
-		reader:            r,
-		buffer:            bytes.NewBuffer(make([]byte, 0, initialBufferSize)),
+		InputBufferSize:      16,
+		ZlibBufferSize:       initialBufferSize,
+		OutputChannelLength:  8,
+		DecodedChannelLength: 8000,
+		reader:               r,
+		buffer:               bytes.NewBuffer(make([]byte, 0, initialBufferSize)),
 	}
 
 	bh, err := decoder.readBlobHeader()
@@ -105,7 +106,8 @@ func (d *Decoder) SetBufferSize(n int) {
 	d.buffer = bytes.NewBuffer(make([]byte, 0, n))
 }
 
-// Start begins parsing in the background using n goroutines.
+// Start begins parsing in the background using n goroutines.  The background
+// processing can be canceled by calling Stop.
 func (d *Decoder) Start(n int) {
 	if n < 1 {
 		n = 1
@@ -114,24 +116,42 @@ func (d *Decoder) Start(n int) {
 	d.start.Do(func() {
 		d.inputs = make([]chan<- encoded, n)
 		d.outputs = make([]<-chan decoded, n)
-		d.decoded = make(chan pair, d.DecodedBufferSize)
+		d.decoded = make(chan pair, d.DecodedChannelLength)
+		d.done = make(chan struct{})
 
 		// start data decoders
 		for i := range d.inputs {
 			input := make(chan encoded, d.InputBufferSize)
-			output := make(chan decoded, d.OutputBufferSize)
+			output := make(chan decoded, d.OutputChannelLength)
 
 			go func() {
+				defer close(output)
+
 				zlibBuffer := bytes.NewBuffer(make([]byte, 0, d.ZlibBufferSize))
-				for raw := range input {
-					if raw.err == nil {
+
+				for {
+					select {
+					case <-d.done:
+						return
+					case raw, more := <-input:
+						if !more {
+							return
+						}
+
+						if raw.err != nil {
+							output <- decoded{nil, raw.err}
+							return
+						}
+
 						elements, err := decode(raw.header, raw.blob, zlibBuffer)
-						output <- decoded{elements, err}
-					} else {
-						output <- decoded{nil, raw.err}
+
+						select {
+						case <-d.done:
+							return
+						case output <- decoded{elements, err}:
+						}
 					}
 				}
-				close(output)
 			}()
 
 			d.inputs[i] = input
@@ -154,8 +174,7 @@ func (d *Decoder) Start(n int) {
 				h, err := d.readBlobHeader()
 				if err == io.EOF {
 					return
-				}
-				if err != nil {
+				} else if err != nil {
 					input <- encoded{err: err}
 					return
 				}
@@ -166,7 +185,11 @@ func (d *Decoder) Start(n int) {
 					return
 				}
 
-				input <- encoded{header: h, blob: b}
+				select {
+				case <-d.done:
+					return
+				case input <- encoded{header: h, blob: b}:
+				}
 			}
 		}()
 
@@ -179,23 +202,31 @@ func (d *Decoder) Start(n int) {
 				output := d.outputs[i]
 				i = (i + 1) % n
 
-				decoded, more := <-output
+				select {
+				case <-d.done:
+					return
+				case decoded, more := <-output:
+					if !more {
+						return
+					}
 
-				if !more {
-					break
-				}
+					if decoded.err != nil {
+						d.decoded <- pair{nil, decoded.err}
+						return
+					}
 
-				if decoded.err != nil {
-					d.decoded <- pair{nil, decoded.err}
-					break
-				}
-
-				for _, e := range decoded.elements {
-					d.decoded <- pair{e, nil}
+					for _, e := range decoded.elements {
+						d.decoded <- pair{e, nil}
+					}
 				}
 			}
 		}()
 	})
+}
+
+// Stop will cancel the background decoding pipeline.
+func (d *Decoder) Stop() {
+	close(d.done)
 }
 
 // Decode reads the next OSM object and returns either a pointer to Node, Way

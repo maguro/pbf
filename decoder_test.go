@@ -19,8 +19,10 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"runtime/trace"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,9 +34,23 @@ func BenchmarkBremen(b *testing.B) {
 	}
 	defer in.Close()
 
-	bufferSize, _ := strconv.Atoi(os.Getenv("OSM_PB_BUFFER_SIZE"))
-	zlibBufferSize, _ := strconv.Atoi(os.Getenv("OSM_PB_ZLIB_BUFFER_SIZE"))
-	cpu, _ := strconv.Atoi(os.Getenv("OSM_PB_CPU"))
+	ibs, _ := strconv.Atoi(os.Getenv("PBF_INPUT_BUFFER_SIZE"))
+	zbs, _ := strconv.Atoi(os.Getenv("PBF_ZLIB_BUFFER_SIZE"))
+	ocl, _ := strconv.Atoi(os.Getenv("PBF_OUTPUT_CHANNEL_LENGTH"))
+	dcl, _ := strconv.Atoi(os.Getenv("PBF_DECODED_CHANNEL_LENGTH"))
+	cpu, _ := strconv.Atoi(os.Getenv("PBF_CPU"))
+	if t, err := strconv.ParseBool(os.Getenv("PBF_TRACE")); err == nil {
+		if t {
+			f, err := os.Create("trace.out")
+			if err != nil {
+				b.Errorf("Error opening trace file: %v", err)
+			} else {
+				defer f.Close()
+				trace.Start(f)
+				defer trace.Stop()
+			}
+		}
+	}
 
 	for n := 0; n < b.N; n++ {
 		if _, err = in.Seek(0, 0); err != nil {
@@ -44,13 +60,18 @@ func BenchmarkBremen(b *testing.B) {
 		if decoder, err := NewDecoder(in); err != nil {
 			b.Fatal(err)
 		} else {
-			if bufferSize > 0 {
-				decoder.SetBufferSize(bufferSize)
+			if ibs > 0 {
+				decoder.SetBufferSize(ibs)
 			}
-			if zlibBufferSize > 0 {
-				decoder.ZlibBufferSize = zlibBufferSize
+			if zbs > 0 {
+				decoder.ZlibBufferSize = zbs
 			}
-
+			if ocl > 0 {
+				decoder.OutputChannelLength = ocl
+			}
+			if dcl > 0 {
+				decoder.DecodedChannelLength = dcl
+			}
 			if cpu > 0 {
 				decoder.Start(cpu)
 			}
@@ -88,6 +109,45 @@ func TestPublicDecodeSample(t *testing.T) {
 
 func TestPublicDecodeLondon(t *testing.T) {
 	publicDecodeOsmPbf(t, "testdata/greater-london.osm.pbf", 3200894)
+}
+func TestDecoderStop(t *testing.T) {
+	in, err := os.Open("testdata/greater-london.osm.pbf")
+	if err != nil {
+		t.Errorf("Error reading file: %v", err)
+	}
+	defer in.Close()
+
+	// decode header blob
+	decoder, err := NewDecoder(in)
+	if err != nil {
+		t.Errorf("Error reading blob header: %v", err)
+	}
+
+	assert.Equal(t, reflect.TypeOf(&Header{}), reflect.TypeOf(decoder.Header))
+
+	timer := time.NewTimer(time.Millisecond * 250)
+	go func() {
+		<-timer.C
+		decoder.Stop()
+	}()
+
+	// decode elements
+	var nEntries int
+	for {
+		e, err := decoder.Decode()
+		if err != nil {
+			if err != io.EOF {
+				t.Errorf("Error decoding%v", err)
+			} else {
+				break
+			}
+		}
+		assert.NotEqual(t, reflect.TypeOf(&Header{}), reflect.TypeOf(e))
+
+		nEntries++
+	}
+
+	assert.True(t, nEntries < 3200894, "Stop did not cancel decoding")
 }
 
 func detailedDecodeOsmPbf(t *testing.T, file string, expectedBlobs int, expectedEntries int) {
