@@ -226,7 +226,9 @@ func (d *Decoder) Start(n int) {
 
 // Stop will cancel the background decoding pipeline.
 func (d *Decoder) Stop() {
-	close(d.done)
+	if d.done != nil {
+		close(d.done)
+	}
 }
 
 // Decode reads the next OSM object and returns either a pointer to Node, Way
