@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkBremen(b *testing.B) {
+func BenchmarkLondon(b *testing.B) {
 	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
 		b.Errorf("Error reading file: %v", err)
@@ -47,17 +47,18 @@ func BenchmarkBremen(b *testing.B) {
 		}
 	}
 
-	zbs, _ := strconv.Atoi(os.Getenv("PBF_ZLIB_BUFFER_SIZE"))
+	pbs, _ := strconv.Atoi(os.Getenv("PBF_PROTO_BUFFER_SIZE"))
 	ibl, _ := strconv.Atoi(os.Getenv("PBF_INPUT_CHANNEL_LENGTH"))
 	ocl, _ := strconv.Atoi(os.Getenv("PBF_OUTPUT_CHANNEL_LENGTH"))
 	dcl, _ := strconv.Atoi(os.Getenv("PBF_DECODED_CHANNEL_LENGTH"))
 	ncpu, _ := strconv.Atoi(os.Getenv("PBF_NCPU"))
 
 	cfg := DecoderConfig{
-		ZlibBufferSize:       zbs,
+		ProtoBufferSize:      pbs,
 		InputChannelLength:   ibl,
 		OutputChannelLength:  ocl,
 		DecodedChannelLength: dcl,
+		NCpu:                 ncpu,
 	}
 
 	for n := 0; n < b.N; n++ {
@@ -68,10 +69,6 @@ func BenchmarkBremen(b *testing.B) {
 		if decoder, err := NewDecoder(in, cfg); err != nil {
 			b.Fatal(err)
 		} else {
-			if ncpu > 0 {
-				decoder.Start(ncpu)
-			}
-
 			for {
 				if _, err := decoder.Decode(); err == io.EOF {
 					break
@@ -165,9 +162,10 @@ func detailedDecodeOsmPbf(t *testing.T, file string, expectedBlobs int, expected
 
 	// decode data blobs
 	var nBlobs, nEntries int
-	zlibBuffer := bytes.NewBuffer(make([]byte, 0, initialBufferSize))
+	buf := bytes.NewBuffer(make([]byte, 0, initialBufferSize))
+	zbuf := bytes.NewBuffer(make([]byte, 0, initialBufferSize))
 	for {
-		h, err := decoder.readBlobHeader()
+		h, err := decoder.readBlobHeader(buf)
 		if err != nil {
 			if err != io.EOF {
 				t.Errorf("Error reading header: %v", err)
@@ -176,13 +174,13 @@ func detailedDecodeOsmPbf(t *testing.T, file string, expectedBlobs int, expected
 			}
 		}
 
-		b, err := decoder.readBlob(h)
+		b, err := decoder.readBlob(buf, h)
 		if err != nil {
 			t.Errorf("Error reading blob: %v", err)
 		}
 		nBlobs++
 
-		entries, err := decode(h, b, zlibBuffer)
+		entries, err := decode(h, b, zbuf)
 		if err != nil {
 			t.Errorf("Error reading elements: %v", err)
 		}

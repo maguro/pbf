@@ -30,8 +30,8 @@ func Example() {
 	}
 	defer in.Close()
 
-	const size = 33554432
-	d, err := parser.NewDecoder(in, parser.DecoderConfig{ProtoBufferSize: size, ZlibBufferSize: size, NCpu: 2})
+	const size = 3 * 1024 * 1024
+	d, err := parser.NewDecoder(in, parser.DecoderConfig{ProtoBufferSize: size, NCpu: 2})
 
 	var nc, wc, rc uint64
 	for {
