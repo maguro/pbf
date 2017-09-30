@@ -34,11 +34,6 @@ func BenchmarkBremen(b *testing.B) {
 	}
 	defer in.Close()
 
-	ibs, _ := strconv.Atoi(os.Getenv("PBF_INPUT_BUFFER_SIZE"))
-	zbs, _ := strconv.Atoi(os.Getenv("PBF_ZLIB_BUFFER_SIZE"))
-	ocl, _ := strconv.Atoi(os.Getenv("PBF_OUTPUT_CHANNEL_LENGTH"))
-	dcl, _ := strconv.Atoi(os.Getenv("PBF_DECODED_CHANNEL_LENGTH"))
-	cpu, _ := strconv.Atoi(os.Getenv("PBF_CPU"))
 	if t, err := strconv.ParseBool(os.Getenv("PBF_TRACE")); err == nil {
 		if t {
 			f, err := os.Create("trace.out")
@@ -52,28 +47,29 @@ func BenchmarkBremen(b *testing.B) {
 		}
 	}
 
+	zbs, _ := strconv.Atoi(os.Getenv("PBF_ZLIB_BUFFER_SIZE"))
+	ibl, _ := strconv.Atoi(os.Getenv("PBF_INPUT_CHANNEL_LENGTH"))
+	ocl, _ := strconv.Atoi(os.Getenv("PBF_OUTPUT_CHANNEL_LENGTH"))
+	dcl, _ := strconv.Atoi(os.Getenv("PBF_DECODED_CHANNEL_LENGTH"))
+	ncpu, _ := strconv.Atoi(os.Getenv("PBF_NCPU"))
+
+	cfg := DecoderConfig{
+		ZlibBufferSize:       zbs,
+		InputChannelLength:   ibl,
+		OutputChannelLength:  ocl,
+		DecodedChannelLength: dcl,
+	}
+
 	for n := 0; n < b.N; n++ {
 		if _, err = in.Seek(0, 0); err != nil {
 			b.Fatal(err)
 		}
 
-		if decoder, err := NewDecoder(in); err != nil {
+		if decoder, err := NewDecoder(in, cfg); err != nil {
 			b.Fatal(err)
 		} else {
-			if ibs > 0 {
-				decoder.SetBufferSize(ibs)
-			}
-			if zbs > 0 {
-				decoder.ZlibBufferSize = zbs
-			}
-			if ocl > 0 {
-				decoder.OutputChannelLength = ocl
-			}
-			if dcl > 0 {
-				decoder.DecodedChannelLength = dcl
-			}
-			if cpu > 0 {
-				decoder.Start(cpu)
+			if ncpu > 0 {
+				decoder.Start(ncpu)
 			}
 
 			for {
@@ -119,7 +115,7 @@ func TestDecoderStop(t *testing.T) {
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in)
+	decoder, err := NewDecoder(in, DefaultConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}
@@ -160,7 +156,7 @@ func detailedDecodeOsmPbf(t *testing.T, file string, expectedBlobs int, expected
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in)
+	decoder, err := NewDecoder(in, DefaultConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}
@@ -209,7 +205,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in)
+	decoder, err := NewDecoder(in, DefaultConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}

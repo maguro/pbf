@@ -52,12 +52,14 @@ type pair struct {
 
 // Decoder reads and decodes OpenStreetMap PBF data from an input stream.
 type Decoder struct {
-	InputBufferSize      int
-	ZlibBufferSize       int
-	OutputChannelLength  int
-	DecodedChannelLength int
 	inputs               []chan<- encoded
 	outputs              []<-chan decoded
+	protoBufferSize      int
+	zlibBufferSize       int
+	inputChannelLength   int
+	outputChannelLength  int
+	decodedChannelLength int
+	ncpu                 int
 	decoded              chan pair
 	done                 chan struct{}
 	start                sync.Once
@@ -69,22 +71,52 @@ type Decoder struct {
 	Header *Header
 }
 
+// DecoderConfig provides optional configuration parameters for Decoder construction.
+type DecoderConfig struct {
+	ProtoBufferSize      int // buffer size for protobuf un-marshaling
+	ZlibBufferSize       int // buffer size for zlib unpacking
+	InputChannelLength   int // channel length of raw blobs
+	OutputChannelLength  int // channel length of decoded arrays of element
+	DecodedChannelLength int // channel length of decoded elements coalesced from output channels
+	NCpu                 int // the number of CPUs to use for background processing
+}
+
+// DefaultConfig provides a default configuration.
+var DefaultConfig = DecoderConfig{}
+
 // NewDecoder returns a new decoder that reads from r.
-func NewDecoder(r io.Reader) (*Decoder, error) {
-	decoder := &Decoder{
-		InputBufferSize:      16,
-		ZlibBufferSize:       initialBufferSize,
-		OutputChannelLength:  8,
-		DecodedChannelLength: 8000,
+func NewDecoder(r io.Reader, cfg DecoderConfig) (*Decoder, error) {
+	d := &Decoder{
+		protoBufferSize:      initialBufferSize,
+		zlibBufferSize:       initialBufferSize,
+		inputChannelLength:   16,
+		outputChannelLength:  8,
+		decodedChannelLength: 8000,
 		reader:               r,
 		buffer:               bytes.NewBuffer(make([]byte, 0, initialBufferSize)),
 	}
 
-	bh, err := decoder.readBlobHeader()
+	if cfg.ProtoBufferSize > 0 {
+		d.protoBufferSize = cfg.ProtoBufferSize
+	}
+	if cfg.ZlibBufferSize > 0 {
+		d.zlibBufferSize = cfg.ZlibBufferSize
+	}
+	if cfg.InputChannelLength > 0 {
+		d.inputChannelLength = cfg.InputChannelLength
+	}
+	if cfg.OutputChannelLength > 0 {
+		d.outputChannelLength = cfg.OutputChannelLength
+	}
+	if cfg.DecodedChannelLength > 0 {
+		d.decodedChannelLength = cfg.DecodedChannelLength
+	}
+
+	bh, err := d.readBlobHeader()
 	if err != nil {
 		return nil, err
 	}
-	b, err := decoder.readBlob(bh)
+	b, err := d.readBlob(bh)
 	if err != nil {
 		return nil, err
 	}
@@ -92,13 +124,13 @@ func NewDecoder(r io.Reader) (*Decoder, error) {
 	if err != nil {
 		return nil, err
 	}
-	decoder.Header = elements[0].(*Header)
-	if decoder.Header == nil {
+	d.Header = elements[0].(*Header)
+	if d.Header == nil {
 		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(elements[0]))
 		return nil, err
 	}
 
-	return decoder, nil
+	return d, nil
 }
 
 // SetBufferSize sets initial size of decoding buffer. Any value will produce
@@ -117,18 +149,18 @@ func (d *Decoder) Start(n int) {
 	d.start.Do(func() {
 		d.inputs = make([]chan<- encoded, n)
 		d.outputs = make([]<-chan decoded, n)
-		d.decoded = make(chan pair, d.DecodedChannelLength)
+		d.decoded = make(chan pair, d.decodedChannelLength)
 		d.done = make(chan struct{})
 
 		// start data decoders
 		for i := range d.inputs {
-			input := make(chan encoded, d.InputBufferSize)
-			output := make(chan decoded, d.OutputChannelLength)
+			input := make(chan encoded, d.inputChannelLength)
+			output := make(chan decoded, d.outputChannelLength)
 
 			go func() {
 				defer close(output)
 
-				zlibBuffer := bytes.NewBuffer(make([]byte, 0, d.ZlibBufferSize))
+				zlibBuffer := bytes.NewBuffer(make([]byte, 0, d.zlibBufferSize))
 
 				for {
 					raw, more := <-input

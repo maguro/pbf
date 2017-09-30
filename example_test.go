@@ -30,13 +30,8 @@ func Example() {
 	}
 	defer in.Close()
 
-	d, err := parser.NewDecoder(in)
-
-	// use more memory from the start, it is faster
-	d.SetBufferSize(33554432)
-
-	// start decoding with several goroutines, it is faster
-	d.Start(2)
+	const size = 33554432
+	d, err := parser.NewDecoder(in, parser.DecoderConfig{ProtoBufferSize: size, ZlibBufferSize: size, NCpu: 2})
 
 	var nc, wc, rc uint64
 	for {
