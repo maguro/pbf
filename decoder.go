@@ -56,7 +56,7 @@ type Decoder struct {
 	inputChannelLength   int
 	outputChannelLength  int
 	decodedChannelLength int
-	ncpu                 int
+	ncpu                 uint16
 	decoded              chan pair
 	done                 chan struct{}
 	begin                sync.Once
@@ -69,11 +69,11 @@ type Decoder struct {
 
 // DecoderConfig provides optional configuration parameters for Decoder construction.
 type DecoderConfig struct {
-	ProtoBufferSize      int // buffer size for protobuf un-marshaling
-	InputChannelLength   int // channel length of raw blobs
-	OutputChannelLength  int // channel length of decoded arrays of element
-	DecodedChannelLength int // channel length of decoded elements coalesced from output channels
-	NCpu                 int // the number of CPUs to use for background processing
+	ProtoBufferSize      int    // buffer size for protobuf un-marshaling
+	InputChannelLength   int    // channel length of raw blobs
+	OutputChannelLength  int    // channel length of decoded arrays of element
+	DecodedChannelLength int    // channel length of decoded elements coalesced from output channels
+	NCpu                 uint16 // the number of CPUs to use for background processing
 }
 
 // DefaultConfig provides a default configuration.
@@ -86,7 +86,7 @@ func NewDecoder(r io.Reader, cfg DecoderConfig) (*Decoder, error) {
 		inputChannelLength:   16,
 		outputChannelLength:  8,
 		decodedChannelLength: 8000,
-		ncpu:                 runtime.GOMAXPROCS(-1),
+		ncpu:                 uint16(runtime.GOMAXPROCS(-1)),
 		reader:               r,
 	}
 
@@ -132,7 +132,7 @@ func NewDecoder(r io.Reader, cfg DecoderConfig) (*Decoder, error) {
 // start begins parsing in the background using n goroutines.  The background
 // processing can be canceled by calling Stop.
 func (d *Decoder) start() {
-	n := d.ncpu
+	n := int(d.ncpu)
 
 	d.begin.Do(func() {
 		inputs := make([]chan<- encoded, n)
