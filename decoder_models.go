@@ -107,6 +107,10 @@ type Relation struct {
 	Members []Member
 }
 
+func (b BoundingBox) String() string {
+	return fmt.Sprintf("[%f, %f, %f, %f]", b.Left, b.Bottom, b.Right, b.Top)
+}
+
 func (d DecimalDegrees) String() string {
 	val := math.Abs(float64(d))
 	degrees := int(math.Floor(val))
