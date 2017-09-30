@@ -61,6 +61,7 @@ type Decoder struct {
 	decoded              chan pair
 	done                 chan struct{}
 	start                sync.Once
+	stop                 sync.Once
 
 	reader io.Reader
 	buffer *bytes.Buffer
@@ -130,27 +131,19 @@ func (d *Decoder) Start(n int) {
 				zlibBuffer := bytes.NewBuffer(make([]byte, 0, d.ZlibBufferSize))
 
 				for {
-					select {
-					case <-d.done:
+					raw, more := <-input
+					if !more {
 						return
-					case raw, more := <-input:
-						if !more {
-							return
-						}
-
-						if raw.err != nil {
-							output <- decoded{nil, raw.err}
-							return
-						}
-
-						elements, err := decode(raw.header, raw.blob, zlibBuffer)
-
-						select {
-						case <-d.done:
-							return
-						case output <- decoded{elements, err}:
-						}
 					}
+
+					if raw.err != nil {
+						output <- decoded{nil, raw.err}
+						return
+					}
+
+					elements, err := decode(raw.header, raw.blob, zlibBuffer)
+
+					output <- decoded{elements, err}
 				}
 			}()
 
@@ -203,8 +196,6 @@ func (d *Decoder) Start(n int) {
 				i = (i + 1) % n
 
 				select {
-				case <-d.done:
-					return
 				case decoded, more := <-output:
 					if !more {
 						return
@@ -226,9 +217,18 @@ func (d *Decoder) Start(n int) {
 
 // Stop will cancel the background decoding pipeline.
 func (d *Decoder) Stop() {
-	if d.done != nil {
-		close(d.done)
-	}
+
+	d.start.Do(func() {
+		// close decoded so calls to Decode return EOF
+		close(d.decoded)
+	})
+
+	d.stop.Do(func() {
+		if d.done != nil {
+			// closing done notifies pipeline to cancel
+			close(d.done)
+		}
+	})
 }
 
 // Decode reads the next OSM object and returns either a pointer to Node, Way

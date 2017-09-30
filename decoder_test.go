@@ -110,6 +110,7 @@ func TestPublicDecodeSample(t *testing.T) {
 func TestPublicDecodeLondon(t *testing.T) {
 	publicDecodeOsmPbf(t, "testdata/greater-london.osm.pbf", 3200894)
 }
+
 func TestDecoderStop(t *testing.T) {
 	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
@@ -128,6 +129,7 @@ func TestDecoderStop(t *testing.T) {
 	timer := time.NewTimer(time.Millisecond * 250)
 	go func() {
 		<-timer.C
+		decoder.Stop()
 		decoder.Stop()
 	}()
 
