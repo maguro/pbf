@@ -17,7 +17,7 @@ install:
 
 script:
   - go install
-  - test -z "$(goimports -l -d $(go list -f {{.Dir}}/*.go ./...) | tee /dev/stderr)"
+  - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...) | tee /dev/stderr)"
   - test -z "$(golint ./... | tee /dev/stderr)"
   - go tool vet .
   - go test -race -coverprofile=coverage.txt -covermode=atomic
