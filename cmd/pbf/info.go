@@ -17,14 +17,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
-
-	"io"
-
-	"runtime"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/maguro/pbf"
@@ -32,10 +30,12 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-var jsonfmt bool
-var extended bool
-var cpu uint16
-var progress bool
+var (
+	jsonfmt  bool
+	extended bool
+	cpu      uint16
+	progress bool
+)
 
 type ExtendedHeader struct {
 	pbf.Header
