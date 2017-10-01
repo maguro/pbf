@@ -58,7 +58,7 @@ func BenchmarkLondon(b *testing.B) {
 		InputChannelLength:   ibl,
 		OutputChannelLength:  ocl,
 		DecodedChannelLength: dcl,
-		NCpu:                 ncpu,
+		NCpu:                 uint16(ncpu),
 	}
 
 	for n := 0; n < b.N; n++ {

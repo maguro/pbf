@@ -16,7 +16,7 @@ package main
 
 import "github.com/spf13/cobra"
 
-var RootCmd = &cobra.Command{
+var rootCmd = &cobra.Command{
 	Use:   "pbf",
 	Short: "An OpenStreetMap data utility",
 	Long:  `An OpenStreetMap data utility`,

@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/maguro/pbf"
 	"github.com/spf13/cobra"
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 	progress bool
 )
 
-type ExtendedHeader struct {
+type extendedHeader struct {
 	pbf.Header
 
 	NodeCount     int64
@@ -46,7 +46,7 @@ type ExtendedHeader struct {
 }
 
 func init() {
-	RootCmd.AddCommand(infoCmd)
+	rootCmd.AddCommand(infoCmd)
 	infoCmd.Flags().BoolVarP(&jsonfmt, "json", "j", false, "format information in JSON")
 	infoCmd.Flags().BoolVarP(&extended, "extended", "e", false, "provide extended information (scans entire file)")
 	infoCmd.Flags().Uint16VarP(&cpu, "max-cpu", "m", uint16(runtime.GOMAXPROCS(-1)), "maximum number of CPUs to use for scanning")
@@ -80,7 +80,7 @@ var infoCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		info := &ExtendedHeader{Header: *d.Header}
+		info := &extendedHeader{Header: *d.Header}
 
 		var nc, wc, rc int64
 		if extended {
