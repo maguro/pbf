@@ -77,7 +77,7 @@ type Info struct {
 	UID       int32
 	Timestamp time.Time
 	Changeset int64
-	UserSID   string
+	User      string
 	Visible   bool
 }
 

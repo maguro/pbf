@@ -148,7 +148,7 @@ func (c *context) decodeInfo(info *protobuf.Info) *Info {
 		i.Changeset = info.GetChangeset()
 		i.UID = info.GetUid()
 
-		i.UserSID = c.strings[info.GetUserSid()]
+		i.User = c.strings[info.GetUserSid()]
 
 		if info.Visible != nil {
 			i.Visible = info.GetVisible()
@@ -225,7 +225,7 @@ func (dic *denseInfoContext) decodeInfo(i int) *Info {
 		UID:       dic.uid,
 		Timestamp: toTimestamp(dic.dateGranularity, int32(dic.timestamp)),
 		Changeset: dic.changeset,
-		UserSID:   dic.strings[dic.userSid],
+		User:      dic.strings[dic.userSid],
 	}
 
 	if dic.visibilities == nil {
