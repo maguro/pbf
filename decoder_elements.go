@@ -47,8 +47,8 @@ func (c *context) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
 			ID:   node.GetId(),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
-			Lat:  toDecimalDegrees(c.latOffset, c.granularity, node.GetLat()),
-			Lon:  toDecimalDegrees(c.lonOffset, c.granularity, node.GetLon()),
+			Lat:  toDegrees(c.latOffset, c.granularity, node.GetLat()),
+			Lon:  toDegrees(c.lonOffset, c.granularity, node.GetLon()),
 		}
 	}
 	return elements
@@ -73,8 +73,8 @@ func (c *context) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
 			ID:   id,
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
-			Lat:  toDecimalDegrees(c.latOffset, c.granularity, lat),
-			Lon:  toDecimalDegrees(c.lonOffset, c.granularity, lon),
+			Lat:  toDegrees(c.latOffset, c.granularity, lat),
+			Lon:  toDegrees(c.lonOffset, c.granularity, lon),
 		}
 	}
 	return elements

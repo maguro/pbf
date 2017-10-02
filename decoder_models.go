@@ -20,34 +20,43 @@ import (
 	"fmt"
 	"math"
 	"time"
+
+	"github.com/golang/geo/s1"
 )
 
-// DecimalDegrees is the decimal degree representation of a longitude or latitude.
-type DecimalDegrees float64
+// Degrees is the decimal degree representation of a longitude or latitude.
+type Degrees float64
 
-// NanoDecimalDegrees is one billionth of a degree.
-const NanoDecimalDegrees DecimalDegrees = 1e-9
-
-// MemberType is an enumeration of relation types.
-type MemberType int
-
+// Degrees units.
 const (
-	// NODE denotes that the member is a node
-	NODE MemberType = iota
+	Degree Degrees = 1
+	Radian         = (180 / math.Pi) * Degree
 
-	// WAY denotes that the member is a way
-	WAY
-
-	// RELATION denotes that the member is a relation
-	RELATION
+	E9 = 1e-9
 )
+
+// Angle returns the equivalent s1.Angle.
+func (d Degrees) Angle() s1.Angle { return s1.Angle(float64(d) / float64(s1.Degree)) }
+
+func (d Degrees) String() string {
+	val := math.Abs(float64(d))
+	degrees := int(math.Floor(val))
+	minutes := int(math.Floor(60 * (val - float64(degrees))))
+	seconds := 3600 * (val - float64(degrees) - (float64(minutes) / 60))
+
+	return fmt.Sprintf("%d\u00B0 %d' %f\"", degrees, minutes, seconds)
+}
 
 // BoundingBox is simply a bounding box.
 type BoundingBox struct {
-	Left   DecimalDegrees
-	Right  DecimalDegrees
-	Top    DecimalDegrees
-	Bottom DecimalDegrees
+	Left   Degrees
+	Right  Degrees
+	Top    Degrees
+	Bottom Degrees
+}
+
+func (b BoundingBox) String() string {
+	return fmt.Sprintf("[%f, %f, %f, %f]", b.Left, b.Bottom, b.Right, b.Top)
 }
 
 // Header is the contents of the OpenStreetMap PBF data file.
@@ -79,8 +88,8 @@ type Node struct {
 	ID   int64
 	Tags map[string]string
 	Info *Info
-	Lat  DecimalDegrees
-	Lon  DecimalDegrees
+	Lat  Degrees
+	Lon  Degrees
 }
 
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
@@ -90,6 +99,20 @@ type Way struct {
 	Info    *Info
 	NodeIDs []int64
 }
+
+// MemberType is an enumeration of relation types.
+type MemberType int
+
+const (
+	// NODE denotes that the member is a node
+	NODE MemberType = iota
+
+	// WAY denotes that the member is a way
+	WAY
+
+	// RELATION denotes that the member is a relation
+	RELATION
+)
 
 // Member represents an element that
 type Member struct {
@@ -105,17 +128,4 @@ type Relation struct {
 	Tags    map[string]string
 	Info    *Info
 	Members []Member
-}
-
-func (b BoundingBox) String() string {
-	return fmt.Sprintf("[%f, %f, %f, %f]", b.Left, b.Bottom, b.Right, b.Top)
-}
-
-func (d DecimalDegrees) String() string {
-	val := math.Abs(float64(d))
-	degrees := int(math.Floor(val))
-	minutes := int(math.Floor(60 * (val - float64(degrees))))
-	seconds := 3600 * (val - float64(degrees) - (float64(minutes) / 60))
-
-	return fmt.Sprintf("%d\u00B0 %d' %f\"", degrees, minutes, seconds)
 }

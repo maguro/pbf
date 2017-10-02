@@ -373,10 +373,10 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 
 	if hb.Bbox != nil {
 		header.BoundingBox = &BoundingBox{
-			Left:   toDecimalDegrees(0, 1, hb.Bbox.GetLeft()),
-			Right:  toDecimalDegrees(0, 1, hb.Bbox.GetRight()),
-			Top:    toDecimalDegrees(0, 1, hb.Bbox.GetTop()),
-			Bottom: toDecimalDegrees(0, 1, hb.Bbox.GetBottom()),
+			Left:   toDegrees(0, 1, hb.Bbox.GetLeft()),
+			Right:  toDegrees(0, 1, hb.Bbox.GetRight()),
+			Top:    toDegrees(0, 1, hb.Bbox.GetTop()),
+			Bottom: toDegrees(0, 1, hb.Bbox.GetBottom()),
 		}
 	}
 
@@ -387,8 +387,8 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 	return header, nil
 }
 
-// toDecimalDegrees converts a coordinate into DecimalDegrees, given the offset and
+// toDegrees converts a coordinate into Degrees, given the offset and
 // granularity of the coordinate.
-func toDecimalDegrees(offset int64, granularity int32, coordinate int64) DecimalDegrees {
-	return NanoDecimalDegrees * DecimalDegrees(offset+(int64(granularity)*coordinate))
+func toDegrees(offset int64, granularity int32, coordinate int64) Degrees {
+	return E9 * Degrees(offset+(int64(granularity)*coordinate))
 }
