@@ -10,6 +10,7 @@ go:
 
 install:
   - go get -u github.com/dustin/go-humanize
+  - go get -u github.com/golang/geo/s1
   - go get -u github.com/golang/lint/golint
   - go get -u github.com/golang/protobuf/proto
   - go get -u github.com/stretchr/testify/assert
