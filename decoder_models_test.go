@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package pbf
 
 import (
-	"fmt"
-	"os"
+	"testing"
 
-	"github.com/maguro/pbf/cmd/pbf/cli"
-	_ "github.com/maguro/pbf/cmd/pbf/extract"
-	_ "github.com/maguro/pbf/cmd/pbf/info"
+	"github.com/stretchr/testify/assert"
 )
 
-func main() {
-	if err := cli.RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+func TestDegreesEqualWithin(t *testing.T) {
+	assert.True(t, Degrees(53.123450).EqualWithin(Degrees(53.123454), E5))
+	assert.False(t, Degrees(53.123450).EqualWithin(Degrees(53.123455), E5))
 }

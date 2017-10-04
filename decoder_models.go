@@ -19,20 +19,29 @@ package pbf
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
+	humanize "github.com/dustin/go-humanize"
 	"github.com/golang/geo/s1"
 )
 
 // Degrees is the decimal degree representation of a longitude or latitude.
 type Degrees float64
 
+// Epsilon is an enumeration of precisions that can be used when comparing Degrees.
+type Epsilon float64
+
 // Degrees units.
 const (
 	Degree Degrees = 1
 	Radian         = (180 / math.Pi) * Degree
 
-	E9 = 1e-9
+	E5 Epsilon = 1e-5
+	E6 Epsilon = 1e-6
+	E7 Epsilon = 1e-7
+	E8 Epsilon = 1e-8
+	E9 Epsilon = 1e-9
 )
 
 // Angle returns the equivalent s1.Angle.
@@ -47,6 +56,38 @@ func (d Degrees) String() string {
 	return fmt.Sprintf("%d\u00B0 %d' %f\"", degrees, minutes, seconds)
 }
 
+// EqualWithin checks if two degrees are within a specific epsilon.
+func (d Degrees) EqualWithin(o Degrees, eps Epsilon) bool {
+	return round(float64(d)/float64(eps))-round(float64(o)/float64(eps)) == 0
+}
+
+// E5 returns the angle in hundred thousandths of degrees.
+func (d Degrees) E5() int32 { return round(float64(d * 1e5)) }
+
+// E6 returns the angle in millionths of degrees.
+func (d Degrees) E6() int32 { return round(float64(d * 1e6)) }
+
+// E7 returns the angle in ten millionths of degrees.
+func (d Degrees) E7() int32 { return round(float64(d * 1e7)) }
+
+// round returns the value rounded to nearest as an int32.
+// This does not match C++ exactly for the case of x.5.
+func round(val float64) int32 {
+	if val < 0 {
+		return int32(val - 0.5)
+	}
+	return int32(val + 0.5)
+}
+
+// ParseDegrees converts a string to a Degrees instance.
+func ParseDegrees(s string) (Degrees, error) {
+	u, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	return Degrees(u), nil
+}
+
 // BoundingBox is simply a bounding box.
 type BoundingBox struct {
 	Left   Degrees
@@ -55,8 +96,18 @@ type BoundingBox struct {
 	Bottom Degrees
 }
 
+// EqualWithin checks if two bounding boxes are within a specific epsilon.
+func (b BoundingBox) EqualWithin(o BoundingBox, eps Epsilon) bool {
+	return b.Left.EqualWithin(o.Left, eps) &&
+		b.Right.EqualWithin(o.Right, eps) &&
+		b.Top.EqualWithin(o.Top, eps) &&
+		b.Bottom.EqualWithin(o.Bottom, eps)
+}
+
 func (b BoundingBox) String() string {
-	return fmt.Sprintf("[%f, %f, %f, %f]", b.Left, b.Bottom, b.Right, b.Top)
+	return fmt.Sprintf("[%s, %s, %s, %s]",
+		humanize.Ftoa(float64(b.Left)), humanize.Ftoa(float64(b.Bottom)),
+		humanize.Ftoa(float64(b.Right)), humanize.Ftoa(float64(b.Top)))
 }
 
 // Header is the contents of the OpenStreetMap PBF data file.

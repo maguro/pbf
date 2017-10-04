@@ -390,5 +390,5 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 // toDegrees converts a coordinate into Degrees, given the offset and
 // granularity of the coordinate.
 func toDegrees(offset int64, granularity int32, coordinate int64) Degrees {
-	return E9 * Degrees(offset+(int64(granularity)*coordinate))
+	return 1e-9 * Degrees(offset+(int64(granularity)*coordinate))
 }

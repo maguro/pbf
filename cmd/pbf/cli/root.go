@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import "github.com/spf13/cobra"
 
-var rootCmd = &cobra.Command{
+// RootCmd is the root cobra command for pbf.
+var RootCmd = &cobra.Command{
 	Use:   "pbf",
 	Short: "An OpenStreetMap data utility",
 	Long:  `An OpenStreetMap data utility`,
