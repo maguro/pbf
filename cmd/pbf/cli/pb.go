@@ -30,17 +30,27 @@ type progressBar struct {
 	bar *pb.ProgressBar
 }
 
-// NewProgressBar creates an instance of ReadCloser with an associated
+// WrapInputFile creates an instance of os.File with an associated
 // ProgressBar that tracks the bytes read relative to the total.
-func NewProgressBar(delegate io.ReadCloser, total int) io.ReadCloser {
+func WrapInputFile(f *os.File) (io.ReadCloser, error) {
+	if f == os.Stdin {
+		// don't bother wrapping stdin
+		return os.Stdin, nil
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+	total := int(fi.Size())
+
 	bar := pb.New(total).SetUnits(pb.U_BYTES_DEC).SetWidth(79)
 	bar.Output = os.Stderr
 	bar.Start()
 
 	return progressBar{
-		r:   bar.NewProxyReader(delegate),
+		r:   bar.NewProxyReader(f),
 		bar: bar,
-	}
+	}, nil
 }
 
 // Read implements io.Reader.Read by simple delegation.

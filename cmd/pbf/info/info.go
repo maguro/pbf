@@ -54,22 +54,20 @@ var infoCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var in io.ReadCloser
+		var f *os.File
+		var err error
 		if len(args) == 1 {
-			f, err := os.Open(args[0])
+			f, err = os.Open(args[0])
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			fi, err := f.Stat()
-			if err != nil {
-				log.Fatal(err)
-			}
-			size := int(fi.Size())
-
-			in = cli.NewProgressBar(f, size)
 		} else {
-			in = os.Stdin
+			f = os.Stdin
+		}
+
+		in, err := cli.WrapInputFile(f)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		flags := cmd.Flags()
