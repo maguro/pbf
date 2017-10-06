@@ -196,7 +196,7 @@ func (d *Decoder) Decode() (interface{}, error) {
 // read reads blobs and their headers and place them onto input channels to be
 // decoded.  The blob/header pairs are placed, round-robin, onto an array of
 // input channels to be concurrently decoded.
-func (d Decoder) read(inputs []chan<- encoded) {
+func (d *Decoder) read(inputs []chan<- encoded) {
 	defer func() {
 		for _, input := range inputs {
 			close(input)
