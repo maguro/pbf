@@ -145,92 +145,17 @@ func (d *Decoder) start() {
 			input := make(chan encoded, d.inputChannelLength)
 			output := make(chan decoded, d.outputChannelLength)
 
-			go func() {
-				defer close(output)
-
-				buf := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
-
-				for {
-					raw, more := <-input
-					if !more {
-						return
-					}
-
-					if raw.err != nil {
-						output <- decoded{nil, raw.err}
-						return
-					}
-
-					elements, err := decode(raw.header, raw.blob, buf)
-
-					output <- decoded{elements, err}
-				}
-			}()
+			go d.decode(input, output)
 
 			inputs[i] = input
 			outputs[i] = output
 		}
 
 		// read raw blobs and distribute amongst inputs
-		go func() {
-			defer func() {
-				for _, input := range inputs {
-					close(input)
-				}
-			}()
-
-			buffer := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
-			var i int
-			for {
-				input := inputs[i]
-				i = (i + 1) % n
-
-				h, err := d.readBlobHeader(buffer)
-				if err == io.EOF {
-					return
-				} else if err != nil {
-					input <- encoded{err: err}
-					return
-				}
-
-				b, err := d.readBlob(buffer, h)
-				if err != nil {
-					input <- encoded{err: err}
-					return
-				}
-
-				select {
-				case <-d.done:
-					return
-				case input <- encoded{header: h, blob: b}:
-				}
-			}
-		}()
+		go d.read(inputs)
 
 		// coalesce decoded elements
-		go func() {
-			defer close(d.decoded)
-
-			var i int
-			for {
-				output := outputs[i]
-				i = (i + 1) % n
-
-				decoded, more := <-output
-				if !more {
-					return
-				}
-
-				if decoded.err != nil {
-					d.decoded <- pair{nil, decoded.err}
-					return
-				}
-
-				for _, e := range decoded.elements {
-					d.decoded <- pair{e, nil}
-				}
-			}
-		}()
+		go d.coalesce(outputs)
 	})
 }
 
@@ -266,6 +191,98 @@ func (d *Decoder) Decode() (interface{}, error) {
 		return nil, io.EOF
 	}
 	return decoded.element, decoded.err
+}
+
+// read reads blobs and their headers and place them onto input channels to be
+// decoded.  The blob/header pairs are placed, round-robin, onto an array of
+// input channels to be concurrently decoded.
+func (d Decoder) read(inputs []chan<- encoded) {
+	defer func() {
+		for _, input := range inputs {
+			close(input)
+		}
+	}()
+
+	n := len(inputs)
+	buffer := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
+	var i int
+	for {
+		input := inputs[i]
+		i = (i + 1) % n
+
+		h, err := d.readBlobHeader(buffer)
+		if err == io.EOF {
+			return
+		} else if err != nil {
+			input <- encoded{err: err}
+			return
+		}
+
+		b, err := d.readBlob(buffer, h)
+		if err != nil {
+			input <- encoded{err: err}
+			return
+		}
+
+		select {
+		case <-d.done:
+			return
+		case input <- encoded{header: h, blob: b}:
+		}
+	}
+}
+
+// decode decodes blob/header pairs into an array of OSM elements.  These
+// arrays are placed onto an output channel where they will be coalesced into
+// their correct order.
+func (d *Decoder) decode(input chan encoded, output chan decoded) {
+	defer close(output)
+
+	buf := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
+
+	for {
+		raw, more := <-input
+		if !more {
+			return
+		}
+
+		if raw.err != nil {
+			output <- decoded{nil, raw.err}
+			return
+		}
+
+		elements, err := decode(raw.header, raw.blob, buf)
+
+		output <- decoded{elements, err}
+	}
+}
+
+// coalesce coalesces decoded elements from an array of channels, in a
+// round-robin manner, into the decoded channel to be consumed by the Decode
+// method.
+func (d *Decoder) coalesce(outputs []<-chan decoded) {
+	defer close(d.decoded)
+
+	n := len(outputs)
+	var i int
+	for {
+		output := outputs[i]
+		i = (i + 1) % n
+
+		decoded, more := <-output
+		if !more {
+			return
+		}
+
+		if decoded.err != nil {
+			d.decoded <- pair{nil, decoded.err}
+			return
+		}
+
+		for _, e := range decoded.elements {
+			d.decoded <- pair{e, nil}
+		}
+	}
 }
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
