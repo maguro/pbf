@@ -32,6 +32,9 @@ func Example() {
 
 	const size = 3 * 1024 * 1024
 	d, err := parser.NewDecoder(in, parser.DecoderConfig{ProtoBufferSize: size, NCpu: 2})
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	var nc, wc, rc uint64
 	for {
