@@ -16,7 +16,7 @@ install:
   - go get -u github.com/stretchr/testify/assert
   - go get -u golang.org/x/tools/cmd/goimports
   - go get -u gopkg.in/cheggaaa/pb.v1
-  - go install -u github.com/fzipp/gocyclo
+  - go install github.com/fzipp/gocyclo
 
 script:
   - go install
