@@ -19,7 +19,6 @@ import (
 	"os"
 
 	"github.com/maguro/pbf/cmd/pbf/cli"
-	_ "github.com/maguro/pbf/cmd/pbf/extract"
 	_ "github.com/maguro/pbf/cmd/pbf/info"
 )
 
