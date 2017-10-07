@@ -30,6 +30,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var out io.Writer = os.Stdout
+
 type extendedHeader struct {
 	pbf.Header
 
@@ -155,21 +157,21 @@ func renderJSON(info *extendedHeader, extended bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(b))
+	fmt.Fprint(out, string(b))
 }
 
 func renderTxt(info *extendedHeader, extended bool) {
-	fmt.Printf("BoundingBox: %s\n", info.BoundingBox)
-	fmt.Printf("RequiredFeatures: %s\n", strings.Join(info.RequiredFeatures, ", "))
-	fmt.Printf("OptionalFeatures: %v\n", strings.Join(info.OptionalFeatures, ", "))
-	fmt.Printf("WritingProgram: %s\n", info.WritingProgram)
-	fmt.Printf("Source: %s\n", info.Source)
-	fmt.Printf("OsmosisReplicationTimestamp: %s\n", info.OsmosisReplicationTimestamp.UTC().Format(time.RFC3339))
-	fmt.Printf("OsmosisReplicationSequenceNumber: %d\n", info.OsmosisReplicationSequenceNumber)
-	fmt.Printf("OsmosisReplicationBaseURL: %s\n", info.OsmosisReplicationBaseURL)
+	fmt.Fprintf(out, "BoundingBox: %s\n", info.BoundingBox)
+	fmt.Fprintf(out, "RequiredFeatures: %s\n", strings.Join(info.RequiredFeatures, ", "))
+	fmt.Fprintf(out, "OptionalFeatures: %v\n", strings.Join(info.OptionalFeatures, ", "))
+	fmt.Fprintf(out, "WritingProgram: %s\n", info.WritingProgram)
+	fmt.Fprintf(out, "Source: %s\n", info.Source)
+	fmt.Fprintf(out, "OsmosisReplicationTimestamp: %s\n", info.OsmosisReplicationTimestamp.UTC().Format(time.RFC3339))
+	fmt.Fprintf(out, "OsmosisReplicationSequenceNumber: %d\n", info.OsmosisReplicationSequenceNumber)
+	fmt.Fprintf(out, "OsmosisReplicationBaseURL: %s\n", info.OsmosisReplicationBaseURL)
 	if extended {
-		fmt.Printf("NodeCount: %s\n", humanize.Comma(info.NodeCount))
-		fmt.Printf("WayCount: %s\n", humanize.Comma(info.WayCount))
-		fmt.Printf("RelationCount: %s\n", humanize.Comma(info.RelationCount))
+		fmt.Fprintf(out, "NodeCount: %s\n", humanize.Comma(info.NodeCount))
+		fmt.Fprintf(out, "WayCount: %s\n", humanize.Comma(info.WayCount))
+		fmt.Fprintf(out, "RelationCount: %s\n", humanize.Comma(info.RelationCount))
 	}
 }
