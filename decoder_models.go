@@ -14,7 +14,7 @@
 
 package pbf
 
-//go:generate stringer -type=MemberType
+//go:generate stringer -type=ElementType
 
 import (
 	"fmt"
@@ -151,12 +151,12 @@ type Way struct {
 	NodeIDs []int64
 }
 
-// MemberType is an enumeration of relation types.
-type MemberType int
+// ElementType is an enumeration of relation types.
+type ElementType int
 
 const (
 	// NODE denotes that the member is a node
-	NODE MemberType = iota
+	NODE ElementType = iota
 
 	// WAY denotes that the member is a way
 	WAY
@@ -168,7 +168,7 @@ const (
 // Member represents an element that
 type Member struct {
 	ID   int64
-	Type MemberType
+	Type ElementType
 	Role string
 }
 

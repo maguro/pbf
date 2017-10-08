@@ -265,8 +265,8 @@ func (tic *tagsContext) decodeTags() map[string]string {
 	return tags
 }
 
-// decodeMemberType converts protobuf enum Relation_MemberType to a MemberType.
-func decodeMemberType(mt protobuf.Relation_MemberType) MemberType {
+// decodeMemberType converts protobuf enum Relation_MemberType to a ElementType.
+func decodeMemberType(mt protobuf.Relation_MemberType) ElementType {
 	switch mt {
 	case protobuf.Relation_NODE:
 		return NODE
