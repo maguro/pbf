@@ -29,6 +29,9 @@ import (
 // Degrees is the decimal degree representation of a longitude or latitude.
 type Degrees float64
 
+// Angle represents a 1D angle in radians.
+type Angle s1.Angle
+
 // Epsilon is an enumeration of precisions that can be used when comparing Degrees.
 type Epsilon float64
 
@@ -45,7 +48,7 @@ const (
 )
 
 // Angle returns the equivalent s1.Angle.
-func (d Degrees) Angle() s1.Angle { return s1.Angle(float64(d) / float64(s1.Degree)) }
+func (d Degrees) Angle() Angle { return Angle(float64(d) * float64(s1.Degree)) }
 
 func (d Degrees) String() string {
 	val := math.Abs(float64(d))
@@ -53,11 +56,16 @@ func (d Degrees) String() string {
 	minutes := int(math.Floor(60 * (val - float64(degrees))))
 	seconds := 3600 * (val - float64(degrees) - (float64(minutes) / 60))
 
-	return fmt.Sprintf("%d\u00B0 %d' %f\"", degrees, minutes, seconds)
+	return fmt.Sprintf("%d\u00B0 %d' %s\"", degrees, minutes, humanize.Ftoa(seconds))
 }
 
 // EqualWithin checks if two degrees are within a specific epsilon.
 func (d Degrees) EqualWithin(o Degrees, eps Epsilon) bool {
+	return round(float64(d)/float64(eps))-round(float64(o)/float64(eps)) == 0
+}
+
+// EqualWithin checks if two angles are within a specific epsilon.
+func (d Angle) EqualWithin(o Angle, eps Epsilon) bool {
 	return round(float64(d)/float64(eps))-round(float64(o)/float64(eps)) == 0
 }
 
