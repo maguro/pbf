@@ -19,6 +19,10 @@ install:
   - go get -u golang.org/x/tools/cmd/goimports
   - go get -u gopkg.in/cheggaaa/pb.v1
   - go install github.com/fzipp/gocyclo
+  - cd ../../..
+  - mkdir m4o.io
+  - ln -s `pwd`/github.com/maguro/pbf m4o.io/pbf
+  - cd m4o.io/pbf
 
 script:
   - go install
