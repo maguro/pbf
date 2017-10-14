@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/maguro/pbf/protobuf"
+	"m4o.io/pbf/protobuf"
 )
 
 const (

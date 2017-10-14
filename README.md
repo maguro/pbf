@@ -13,7 +13,7 @@ A golang based OpenStreetMap PBF encoder/decoder with a handy command line utili
 
 The `pbf` cli can be installed using the `go install` command:
 
-    $ go install github.com/maguro/pbf/cmd/pbf 
+    $ go install m4o.io/pbf/cmd/pbf
 
 ### pbf info
 

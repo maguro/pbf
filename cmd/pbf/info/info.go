@@ -25,9 +25,9 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/maguro/pbf"
-	"github.com/maguro/pbf/cmd/pbf/cli"
 	"github.com/spf13/cobra"
+	"m4o.io/pbf"
+	"m4o.io/pbf/cmd/pbf/cli"
 )
 
 var out io.Writer = os.Stdout

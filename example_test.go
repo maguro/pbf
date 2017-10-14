@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	parser "github.com/maguro/pbf"
+	parser "m4o.io/pbf"
 )
 
 func Example() {

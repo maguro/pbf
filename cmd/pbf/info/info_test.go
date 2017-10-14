@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/maguro/pbf"
 	"github.com/stretchr/testify/assert"
+	"m4o.io/pbf"
 )
 
 func TestRunInfo(t *testing.T) {

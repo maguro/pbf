@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/maguro/pbf/cmd/pbf/cli"
-	_ "github.com/maguro/pbf/cmd/pbf/info"
+	"m4o.io/pbf/cmd/pbf/cli"
+	_ "m4o.io/pbf/cmd/pbf/info"
 )
 
 func main() {
