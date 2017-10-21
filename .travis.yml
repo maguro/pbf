@@ -14,7 +14,7 @@ install:
   - go get -u golang.org/x/tools/cmd/goimports
   - go get -u github.com/golang/lint/golint
   - go get -u github.com/fzipp/gocyclo
-  - ./build/vanity.sh
+  - . ./build/vanity.sh
 
 script:
   - go install
