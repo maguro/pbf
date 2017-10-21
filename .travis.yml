@@ -17,11 +17,10 @@ install:
 
 script:
   - go install
-  - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...) | tee /dev/stderr)"
-  - golint ./...
-  - gocyclo -over 15 .
-  - go tool vet .
-  - go test -v -race ./...
+  - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...  | grep -v /vendor/) | tee /dev/stderr)"
+  - golint $(go list -f {{.Dir}} ./... | grep -v /vendor/)
+  - gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
+  - go tool vet $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
   - ./build/codecov.sh
   - PBF_PROTO_BUFFER_SIZE=33554432 PBF_NCPU=4 go test -bench=. -benchtime=10s
 
