@@ -17,3 +17,5 @@ vendor/
 pbf
 !pbf/
 
+# codecov
+coverage.txt
