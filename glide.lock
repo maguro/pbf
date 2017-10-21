@@ -1,5 +1,5 @@
-hash: 709da3e6aa294a283f393436923953a9b33cc1a4baffb21bc6bc1a632aebb156
-updated: 2017-10-20T18:01:28.143311792-07:00
+hash: ed398289b7d303317ea1672043c2954c16f88a713822d4933d16a9445c9e3de3
+updated: 2017-10-20T18:19:37.453171247-07:00
 imports:
 - name: github.com/dustin/go-humanize
   version: 77ed807830b4df581417e7f89eb81d4872832b72
@@ -13,37 +13,14 @@ imports:
   - proto
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
-- name: github.com/mattn/go-colorable
-  version: 5411d3eea5978e6cdc258b30de592b60df6aba96
-  repo: https://github.com/mattn/go-colorable
-- name: github.com/mattn/go-isatty
-  version: 57fdcb988a5c543893cc61bce354a6e24ab70022
-  repo: https://github.com/mattn/go-isatty
+- name: github.com/mattn/go-runewidth
+  version: 97311d9f7767e3d6f422ea06661bc2c7a19e8a5d
 - name: github.com/spf13/cobra
   version: 7b2c5ac9fc04fc5efafb60700713d4fa609b777b
 - name: github.com/spf13/pflag
   version: 1f33b80956cde38911d1f23d764deb8d77a649ce
-- name: golang.org/x/sys
-  version: e24f485414aeafb646f6fca458b0bf869c0880a1
-  repo: https://go.googlesource.com/sys
-  subpackages:
-  - unix
 - name: gopkg.in/cheggaaa/pb.v1
-  version: fec330ed6ef74d0a026da2c639821ee0d9f97687
-- name: gopkg.in/cheggaaa/pb.v2
-  version: fec330ed6ef74d0a026da2c639821ee0d9f97687
-  subpackages:
-  - termutil
-- name: gopkg.in/fatih/color.v1
-  version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
-- name: gopkg.in/mattn/go-colorable.v0
-  version: 167de6bfdfba052fa6b2d3664c8f5272e23c9072
-- name: gopkg.in/mattn/go-isatty.v0
-  version: 0360b2af4f38e8d38c7fce2a9f4e702702d73a39
-- name: gopkg.in/mattn/go-runewidth.v0
-  version: 9e777a8366cce605130a531d2cd6363d07ad7317
-- name: gopkg.in/VividCortex/ewma.v1
-  version: b24eb346a94c3ba12c1da1e564dbac1b498a77ce
+  version: 657164d0228d6bebe316fdf725c69f131a50fb10
 testImports:
 - name: github.com/davecgh/go-spew
   version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
