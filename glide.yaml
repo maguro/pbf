@@ -1,0 +1,17 @@
+package: m4o.io/pbf
+import:
+- package: github.com/dustin/go-humanize
+- package: github.com/golang/geo
+  subpackages:
+  - s1
+- package: github.com/golang/protobuf
+  subpackages:
+  - proto
+- package: github.com/spf13/cobra
+- package: gopkg.in/cheggaaa/pb.v1
+  version: ^2.0.5
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.1.4
+  subpackages:
+  - assert
