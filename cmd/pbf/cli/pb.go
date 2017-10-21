@@ -70,9 +70,5 @@ func (pb progressBar) Close() error {
 
 	fmt.Fprintf(os.Stderr, "\033[2K\r") // clear status bar
 
-	if err := pb.r.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return pb.r.Close()
 }
