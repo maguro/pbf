@@ -24,13 +24,16 @@ import (
 	"strings"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"m4o.io/pbf"
 	"m4o.io/pbf/cmd/pbf/cli"
 )
 
-var out io.Writer = os.Stdout
+var (
+	in  *os.File
+	out io.Writer = os.Stdout
+)
 
 type extendedHeader struct {
 	pbf.Header
@@ -44,30 +47,20 @@ func init() {
 	cli.RootCmd.AddCommand(infoCmd)
 
 	flags := infoCmd.Flags()
+	flags.VarP(cli.NewReaderValue(os.Stdin, &in, "<OSM source>"), "in", "i", "input OSM file")
 	flags.BoolP("json", "j", false, "format information in JSON")
 	flags.Uint16P("cpu", "c", uint16(runtime.GOMAXPROCS(-1)), "number of CPUs to use for scanning")
 	flags.BoolP("extended", "e", false, "provide extended information (scans entire file)")
 }
 
 var infoCmd = &cobra.Command{
-	Use:   "info [<OSM file>]",
+	Use:   "info",
 	Short: "Print information about an OSM file",
 	Long:  "Print information about an OSM file",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var f *os.File
-		var err error
-		if len(args) == 1 {
-			f, err = os.Open(args[0])
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			f = os.Stdin
-		}
-
-		in, err := cli.WrapInputFile(f)
+		win, err := cli.WrapInputFile(in)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -84,9 +77,9 @@ var infoCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		info := runInfo(in, ncpu, extended)
+		info := runInfo(win, ncpu, extended)
 
-		if err := in.Close(); err != nil {
+		if err := win.Close(); err != nil {
 			log.Fatal(err)
 		}
 
