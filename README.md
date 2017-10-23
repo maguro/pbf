@@ -20,7 +20,7 @@ The `pbf` cli can be installed using the `go install` command:
 The `pbf` CLI can be used to obtain summary and extended information about an
 OpenStreetMap PBF file:
 
-    $ pbf info testdata/greater-london.osm.pbf
+    $ pbf info -i testdata/greater-london.osm.pbf
     BoundingBox: [-0.511482, 51.28554, 0.335437, 51.69344]
     RequiredFeatures: OsmSchema-V0.6, DenseNodes
     OptionalFeatures: 
@@ -32,7 +32,7 @@ OpenStreetMap PBF file:
 
 JSON output can be obtained by adding the `-j` option:
 
-    $ pbf info -j testdata/greater-london.osm.pbf | jq
+    $ pbf info -j -i testdata/greater-london.osm.pbf | jq
     {
       "BoundingBox": {
         "Left": -0.511482,
@@ -59,7 +59,7 @@ Extended information about the OpenStreetMap PBF file can be obtained
 by using the `-e` option.  This causes the entire file to be scanned, which can
 take a very long time; a progress bar is displayed on `stderr`.
 
-    $ pbf info -e testdata/greater-london.osm.pbf
+    $ pbf info -e -i testdata/greater-london.osm.pbf
     BoundingBox: [-0.511482, 51.28554, 0.335437, 51.69344]
     RequiredFeatures: OsmSchema-V0.6, DenseNodes
     OptionalFeatures: 
