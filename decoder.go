@@ -76,17 +76,23 @@ type DecoderConfig struct {
 	NCpu                 uint16 // the number of CPUs to use for background processing
 }
 
-// DefaultConfig provides a default configuration.
-var DefaultConfig = DecoderConfig{}
+// DfltDecoderConfig provides a default configuration for decoders.
+var DfltDecoderConfig = DecoderConfig{
+	ProtoBufferSize:      initialBufferSize,
+	InputChannelLength:   16,
+	OutputChannelLength:  8,
+	DecodedChannelLength: 8000,
+	NCpu:                 uint16(runtime.GOMAXPROCS(-1)),
+}
 
 // NewDecoder returns a new decoder that reads from r.
 func NewDecoder(r io.Reader, cfg DecoderConfig) (*Decoder, error) {
 	d := &Decoder{
-		protoBufferSize:      initialBufferSize,
-		inputChannelLength:   16,
-		outputChannelLength:  8,
-		decodedChannelLength: 8000,
-		ncpu:                 uint16(runtime.GOMAXPROCS(-1)),
+		protoBufferSize:      DfltDecoderConfig.ProtoBufferSize,
+		inputChannelLength:   DfltDecoderConfig.InputChannelLength,
+		outputChannelLength:  DfltDecoderConfig.OutputChannelLength,
+		decodedChannelLength: DfltDecoderConfig.DecodedChannelLength,
+		ncpu:                 DfltDecoderConfig.NCpu,
 		reader:               r,
 	}
 

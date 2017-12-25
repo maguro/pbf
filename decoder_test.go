@@ -57,7 +57,7 @@ func TestDecoderStop(t *testing.T) {
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in, DefaultConfig)
+	decoder, err := NewDecoder(in, DfltDecoderConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}
@@ -98,7 +98,7 @@ func detailedDecodeOsmPbf(t *testing.T, file string, expectedBlobs int, expected
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in, DefaultConfig)
+	decoder, err := NewDecoder(in, DfltDecoderConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}
@@ -148,7 +148,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	defer in.Close()
 
 	// decode header blob
-	decoder, err := NewDecoder(in, DefaultConfig)
+	decoder, err := NewDecoder(in, DfltDecoderConfig)
 	if err != nil {
 		t.Errorf("Error reading blob header: %v", err)
 	}
