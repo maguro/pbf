@@ -70,7 +70,7 @@ func TestRunInfoExtended(t *testing.T) {
 }
 
 func TestRenderJSON(t *testing.T) {
-	bbox := &pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 	h := pbf.Header{
 		BoundingBox:      bbox,
@@ -103,7 +103,7 @@ func TestRenderJSON(t *testing.T) {
 		t.Fatalf("Unable to unmarshal json %v", err)
 	}
 
-	assert.True(t, info.BoundingBox.EqualWithin(*bbox, pbf.E6))
+	assert.True(t, info.BoundingBox.EqualWithin(bbox, pbf.E6))
 	assert.Equal(t, info.RequiredFeatures, []string{"OsmSchema-V0.6", "DenseNodes"})
 	assert.Equal(t, info.OptionalFeatures, []string(nil))
 	assert.Equal(t, info.WritingProgram, "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)")
@@ -117,7 +117,7 @@ func TestRenderJSON(t *testing.T) {
 }
 
 func TestRenderText(t *testing.T) {
-	bbox := &pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 	h := pbf.Header{
 		BoundingBox:      bbox,
