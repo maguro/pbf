@@ -15,6 +15,7 @@
 package pbf_test
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -31,10 +32,11 @@ func Example() {
 	defer in.Close()
 
 	const size = 3 * 1024 * 1024
-	d, err := parser.NewDecoder(in, parser.DecoderConfig{ProtoBufferSize: size, NCpu: 2})
+	d, err := parser.NewDecoder(context.Background(), in, parser.DecoderConfig{ProtoBufferSize: size, NCpu: 2})
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer d.Close()
 
 	var nc, wc, rc uint64
 	for {

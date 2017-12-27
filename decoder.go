@@ -17,13 +17,12 @@ package pbf
 import (
 	"bytes"
 	"compress/zlib"
-	"encoding/binary"
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"runtime"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -52,19 +51,9 @@ type pair struct {
 
 // Decoder reads and decodes OpenStreetMap PBF data from an input stream.
 type Decoder struct {
-	protoBufferSize      int
-	inputChannelLength   int
-	outputChannelLength  int
-	decodedChannelLength int
-	ncpu                 uint16
-	decoded              chan pair
-	done                 chan struct{}
-	begin                sync.Once
-	end                  sync.Once
-
-	reader io.Reader
-
-	Header *Header
+	Header Header
+	pairs  chan pair
+	cancel context.CancelFunc
 }
 
 // DecoderConfig provides optional configuration parameters for Decoder construction.
@@ -85,257 +74,202 @@ var DfltDecoderConfig = DecoderConfig{
 	NCpu:                 uint16(runtime.GOMAXPROCS(-1)),
 }
 
-// NewDecoder returns a new decoder that reads from r.
-func NewDecoder(r io.Reader, cfg DecoderConfig) (*Decoder, error) {
-	d := &Decoder{
-		protoBufferSize:      DfltDecoderConfig.ProtoBufferSize,
-		inputChannelLength:   DfltDecoderConfig.InputChannelLength,
-		outputChannelLength:  DfltDecoderConfig.OutputChannelLength,
-		decodedChannelLength: DfltDecoderConfig.DecodedChannelLength,
-		ncpu:                 DfltDecoderConfig.NCpu,
-		reader:               r,
-	}
+// NewDecoder returns a new decoder, configured with cfg, that reads from
+// reader.  The decoder is initialized with the OSM header.
+func NewDecoder(ctx context.Context, reader io.Reader, cfg DecoderConfig) (*Decoder, error) {
+
+	d := &Decoder{}
+	c := DfltDecoderConfig
 
 	if cfg.ProtoBufferSize > 0 {
-		d.protoBufferSize = cfg.ProtoBufferSize
+		c.ProtoBufferSize = cfg.ProtoBufferSize
 	}
 	if cfg.InputChannelLength > 0 {
-		d.inputChannelLength = cfg.InputChannelLength
+		c.InputChannelLength = cfg.InputChannelLength
 	}
 	if cfg.OutputChannelLength > 0 {
-		d.outputChannelLength = cfg.OutputChannelLength
+		c.OutputChannelLength = cfg.OutputChannelLength
 	}
 	if cfg.DecodedChannelLength > 0 {
-		d.decodedChannelLength = cfg.DecodedChannelLength
+		c.DecodedChannelLength = cfg.DecodedChannelLength
 	}
 	if cfg.NCpu > 0 {
-		d.ncpu = cfg.NCpu
+		c.NCpu = cfg.NCpu
 	}
 
-	buf := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
+	ctx, d.cancel = context.WithCancel(ctx)
 
-	h, err := d.readBlobHeader(buf)
+	r := newBlobReader(reader)
+	buf := bytes.NewBuffer(make([]byte, 0, c.ProtoBufferSize))
+
+	h, err := r.readBlobHeader(buf)
 	if err != nil {
 		return nil, err
 	}
-	b, err := d.readBlob(buf, h)
+	b, err := r.readBlob(buf, h)
 	if err != nil {
 		return nil, err
 	}
-	elements, err := decode(h, b, bytes.NewBuffer(make([]byte, 0, 1024)))
+	e, err := elements(h, b, bytes.NewBuffer(make([]byte, 0, 1024)))
 	if err != nil {
 		return nil, err
 	}
-	d.Header = elements[0].(*Header)
-	if d.Header == nil {
-		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(elements[0]))
+
+	if e[0].(*Header) == nil {
+		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(e[0]))
 		return nil, err
 	}
+	d.Header = *e[0].(*Header)
+
+	// create decoding pipelines
+	var outputs []chan decoded
+	for _, input := range read(ctx, r, c) {
+		outputs = append(outputs, decode(input, c))
+	}
+	d.pairs = coalesce(c, outputs...)
 
 	return d, nil
-}
-
-// start begins parsing in the background using n goroutines.  The background
-// processing can be canceled by calling Stop.
-func (d *Decoder) start() {
-	n := int(d.ncpu)
-
-	d.begin.Do(func() {
-		inputs := make([]chan<- encoded, n)
-		outputs := make([]<-chan decoded, n)
-		d.decoded = make(chan pair, d.decodedChannelLength)
-		d.done = make(chan struct{})
-
-		// start data decoders
-		for i := 0; i < n; i++ {
-			input := make(chan encoded, d.inputChannelLength)
-			output := make(chan decoded, d.outputChannelLength)
-
-			go d.decode(input, output)
-
-			inputs[i] = input
-			outputs[i] = output
-		}
-
-		// read raw blobs and distribute amongst inputs
-		go d.read(inputs)
-
-		// coalesce decoded elements
-		go d.coalesce(outputs)
-	})
-}
-
-// Stop will cancel the background decoding pipeline.
-func (d *Decoder) Stop() {
-
-	d.begin.Do(func() {
-		// close decoded so calls to Decode return EOF
-		close(d.decoded)
-	})
-
-	d.end.Do(func() {
-		if d.done != nil {
-			// closing done notifies pipeline to cancel
-			close(d.done)
-		}
-	})
 }
 
 // Decode reads the next OSM object and returns either a pointer to Node, Way
 // or Relation struct representing the underlying OpenStreetMap PBF data, or
 // error encountered. The end of the input stream is reported by an io.EOF
 // error.
-//
-// If background parsing was not begun by calling Start, Start is called with
-// the maximum number of CPUs returned by GOMAXPROCS.
 func (d *Decoder) Decode() (interface{}, error) {
-
-	d.start()
-
-	decoded, more := <-d.decoded
+	decoded, more := <-d.pairs
 	if !more {
 		return nil, io.EOF
 	}
 	return decoded.element, decoded.err
 }
 
-// read reads blobs and their headers and place them onto input channels to be
-// decoded.  The blob/header pairs are placed, round-robin, onto an array of
-// input channels to be concurrently decoded.
-func (d *Decoder) read(inputs []chan<- encoded) {
-	defer func() {
-		for _, input := range inputs {
-			close(input)
+// Close will cancel the background decoding pipeline.
+func (d *Decoder) Close() {
+	d.cancel()
+}
+
+// read obtains OSM blobs and sends them down, in a round-robin manner, a list
+// of channels to be decoded.
+func read(ctx context.Context, b blobReader, cfg DecoderConfig) (inputs []chan encoded) {
+
+	n := cfg.NCpu
+	for i := uint16(0); i < n; i++ {
+		inputs = append(inputs, make(chan encoded, cfg.InputChannelLength))
+	}
+
+	go func() {
+		defer func() {
+			for _, input := range inputs {
+				close(input)
+			}
+		}()
+
+		buffer := bytes.NewBuffer(make([]byte, 0, cfg.ProtoBufferSize))
+		var i uint16
+		for {
+			input := inputs[i]
+			i = (i + 1) % n
+
+			h, err := b.readBlobHeader(buffer)
+			if err == io.EOF {
+				return
+			} else if err != nil {
+				input <- encoded{err: err}
+				return
+			}
+
+			b, err := b.readBlob(buffer, h)
+			if err != nil {
+				input <- encoded{err: err}
+				return
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case input <- encoded{header: h, blob: b}:
+			}
 		}
 	}()
 
-	n := len(inputs)
-	buffer := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
-	var i int
-	for {
-		input := inputs[i]
-		i = (i + 1) % n
-
-		h, err := d.readBlobHeader(buffer)
-		if err == io.EOF {
-			return
-		} else if err != nil {
-			input <- encoded{err: err}
-			return
-		}
-
-		b, err := d.readBlob(buffer, h)
-		if err != nil {
-			input <- encoded{err: err}
-			return
-		}
-
-		select {
-		case <-d.done:
-			return
-		case input <- encoded{header: h, blob: b}:
-		}
-	}
+	return
 }
 
 // decode decodes blob/header pairs into an array of OSM elements.  These
 // arrays are placed onto an output channel where they will be coalesced into
 // their correct order.
-func (d *Decoder) decode(input chan encoded, output chan decoded) {
-	defer close(output)
+func decode(input <-chan encoded, cfg DecoderConfig) (output chan decoded) {
 
-	buf := bytes.NewBuffer(make([]byte, 0, d.protoBufferSize))
+	output = make(chan decoded, cfg.OutputChannelLength)
 
-	for {
-		raw, more := <-input
-		if !more {
-			return
+	buf := bytes.NewBuffer(make([]byte, 0, cfg.ProtoBufferSize))
+
+	go func() {
+		defer close(output)
+
+		for {
+			raw, more := <-input
+			if !more {
+				return
+			}
+
+			if raw.err != nil {
+				output <- decoded{nil, raw.err}
+				return
+			}
+
+			elements, err := elements(raw.header, raw.blob, buf)
+
+			output <- decoded{elements, err}
 		}
+	}()
 
-		if raw.err != nil {
-			output <- decoded{nil, raw.err}
-			return
-		}
-
-		elements, err := decode(raw.header, raw.blob, buf)
-
-		output <- decoded{elements, err}
-	}
+	return
 }
 
-// coalesce coalesces decoded elements from an array of channels, in a
-// round-robin manner, into the decoded channel to be consumed by the Decode
-// method.
-func (d *Decoder) coalesce(outputs []<-chan decoded) {
-	defer close(d.decoded)
+// coalesce merges the list of channels in a round-robin manner and sends the
+// elements in pairs down a channel of pairs.
+func coalesce(cfg DecoderConfig, outputs ...chan decoded) (pairs chan pair) {
 
-	n := len(outputs)
-	var i int
-	for {
-		output := outputs[i]
-		i = (i + 1) % n
+	pairs = make(chan pair, cfg.DecodedChannelLength)
 
-		decoded, more := <-output
-		if !more {
-			return
+	go func() {
+		defer close(pairs)
+
+		n := len(outputs)
+		var i int
+		for {
+			output := outputs[i]
+			i = (i + 1) % n
+
+			decoded, more := <-output
+			if !more {
+				// Since the channels are inspected round-robin, when one channel
+				// is done, all subsequent channels are done.
+				return
+			}
+
+			if decoded.err != nil {
+				pairs <- pair{nil, decoded.err}
+				return
+			}
+
+			for _, e := range decoded.elements {
+				pairs <- pair{e, nil}
+			}
 		}
+	}()
 
-		if decoded.err != nil {
-			d.decoded <- pair{nil, decoded.err}
-			return
-		}
-
-		for _, e := range decoded.elements {
-			d.decoded <- pair{e, nil}
-		}
-	}
+	return
 }
 
-// readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
-// The header is used when decoding blobs into OSM elements.
-func (d *Decoder) readBlobHeader(buffer *bytes.Buffer) (header *protobuf.BlobHeader, err error) {
-	var size uint32
-	err = binary.Read(d.reader, binary.BigEndian, &size)
-	if err != nil {
-		return nil, err
-	}
-
-	buffer.Reset()
-	if _, err := io.CopyN(buffer, d.reader, int64(size)); err != nil {
-		return nil, err
-	}
-
-	header = &protobuf.BlobHeader{}
-	if err := proto.Unmarshal(buffer.Bytes(), header); err != nil {
-		return nil, err
-	}
-
-	return header, nil
-}
-
-// readBlob unmarshals a blob from an array of protobuf encoded bytes.  The
-// blob still needs to be decoded into OSM elements using decode().
-func (d *Decoder) readBlob(buffer *bytes.Buffer, header *protobuf.BlobHeader) (*protobuf.Blob, error) {
-	size := header.GetDatasize()
-
-	buffer.Reset()
-	if _, err := io.CopyN(buffer, d.reader, int64(size)); err != nil {
-		return nil, err
-	}
-
-	blob := &protobuf.Blob{}
-	if err := proto.Unmarshal(buffer.Bytes(), blob); err != nil {
-		return nil, err
-	}
-
-	return blob, nil
-}
-
-// decode unmarshals an array of OSM elements from an array of protobuf encoded
+// elements unmarshals an array of OSM elements from an array of protobuf encoded
 // bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
 // decompression.
-func decode(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
+func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
+
 	var buf []byte
+
 	switch {
 	case blob.Raw != nil:
 		buf = blob.GetRaw()

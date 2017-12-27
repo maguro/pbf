@@ -27,7 +27,7 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 		return nil, err
 	}
 
-	c := newContext(pb)
+	c := newBlockContext(pb)
 
 	elements := make([]interface{}, 0)
 	for _, pg := range pb.GetPrimitivegroup() {
@@ -40,7 +40,7 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 	return elements, nil
 }
 
-func (c *context) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
+func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
 	elements = make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Node{
@@ -54,7 +54,7 @@ func (c *context) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
 	return elements
 }
 
-func (c *context) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
+func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
 	ids := nodes.GetId()
 	elements := make([]interface{}, len(ids))
 
@@ -80,7 +80,7 @@ func (c *context) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
 	return elements
 }
 
-func (c *context) decodeWays(nodes []*protobuf.Way) []interface{} {
+func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		refs := node.GetRefs()
@@ -101,7 +101,7 @@ func (c *context) decodeWays(nodes []*protobuf.Way) []interface{} {
 	return elements
 }
 
-func (c *context) decodeRelations(nodes []*protobuf.Relation) []interface{} {
+func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []interface{} {
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Relation{
@@ -114,7 +114,7 @@ func (c *context) decodeRelations(nodes []*protobuf.Relation) []interface{} {
 	return elements
 }
 
-func (c *context) decodeMembers(node *protobuf.Relation) []Member {
+func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
 	memids := node.GetMemids()
 	memtypes := node.GetTypes()
 	memroles := node.GetRolesSid()
@@ -132,7 +132,7 @@ func (c *context) decodeMembers(node *protobuf.Relation) []Member {
 	return members
 }
 
-func (c *context) decodeTags(keyIDs, valIDs []uint32) map[string]string {
+func (c *blockContext) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	tags := make(map[string]string, len(keyIDs))
 	for i, keyID := range keyIDs {
 		tags[c.strings[keyID]] = c.strings[valIDs[i]]
@@ -140,7 +140,7 @@ func (c *context) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	return tags
 }
 
-func (c *context) decodeInfo(info *protobuf.Info) *Info {
+func (c *blockContext) decodeInfo(info *protobuf.Info) *Info {
 	i := &Info{Visible: true}
 	if info != nil {
 		i.Version = info.GetVersion()
@@ -157,7 +157,7 @@ func (c *context) decodeInfo(info *protobuf.Info) *Info {
 	return i
 }
 
-type context struct {
+type blockContext struct {
 	strings         []string
 	granularity     int32
 	latOffset       int64
@@ -165,8 +165,8 @@ type context struct {
 	dateGranularity int32
 }
 
-func newContext(pb *protobuf.PrimitiveBlock) *context {
-	return &context{
+func newBlockContext(pb *protobuf.PrimitiveBlock) *blockContext {
+	return &blockContext{
 		strings:         pb.GetStringtable().GetS(),
 		granularity:     pb.GetGranularity(),
 		latOffset:       pb.GetLatOffset(),
@@ -192,7 +192,7 @@ type denseInfoContext struct {
 	visibilities    []bool
 }
 
-func (c *context) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
+func (c *blockContext) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
 	dic := &denseInfoContext{
 		dateGranularity: c.dateGranularity,
 		strings:         c.strings,
@@ -243,7 +243,7 @@ type tagsContext struct {
 	keyVals []int32
 }
 
-func (c *context) newTagsContext(keyVals []int32) *tagsContext {
+func (c *blockContext) newTagsContext(keyVals []int32) *tagsContext {
 	tc := &tagsContext{strings: c.strings}
 	if len(keyVals) != 0 {
 		tc.keyVals = keyVals

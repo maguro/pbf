@@ -15,6 +15,7 @@
 package info
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -99,12 +100,12 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 
 	cfg := pbf.DecoderConfig{NCpu: ncpu}
 
-	d, err := pbf.NewDecoder(in, cfg)
+	d, err := pbf.NewDecoder(context.Background(), in, cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	info := &extendedHeader{Header: *d.Header}
+	info := &extendedHeader{Header: d.Header}
 
 	var nc, wc, rc int64
 	if extended {

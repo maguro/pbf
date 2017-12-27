@@ -78,7 +78,3 @@ Finally, `pbf` can read an OpenStreetMap PBF file from `stdin`:
 
 In this case, a progress bar is not displayed since there is no way to know,
 a priori, what the size of the PBF file is.
- 
-#### Credits
-
-The implementation has been heavily influenced by the golang project [github.com/qedus/osmpbf](https://github.com/qedus/osmpbf).
