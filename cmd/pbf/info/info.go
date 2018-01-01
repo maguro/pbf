@@ -21,7 +21,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -49,9 +48,13 @@ func init() {
 
 	flags := infoCmd.Flags()
 	flags.VarP(cli.NewReaderValue(os.Stdin, &in, "<OSM source>"), "in", "i", "input OSM file")
-	flags.BoolP("json", "j", false, "format information in JSON")
-	flags.Uint16P("cpu", "c", uint16(runtime.GOMAXPROCS(-1)), "number of CPUs to use for scanning")
 	flags.BoolP("extended", "e", false, "provide extended information (scans entire file)")
+	flags.BoolP("json", "j", false, "format information in JSON")
+	flags.Uint32P("buffer-length", "b", pbf.DefaultBufferSize, "buffer size for protobuf un-marshaling")
+	flags.Uint32P("raw-length", "r", pbf.DefaultInputChannelLength, "channel length of raw blobs")
+	flags.Uint16P("output-length", "o", pbf.DefaultOutputChannelLength, "channel length of decoded arrays of element")
+	flags.Uint16P("decoded-length", "d", pbf.DefaultDecodedChannelLength, "channel length of decoded elements coalesced from output channels")
+	flags.Uint16P("cpu", "c", pbf.DefaultNCpu(), "number of CPUs to use for scanning")
 }
 
 var infoCmd = &cobra.Command{
@@ -98,9 +101,7 @@ var infoCmd = &cobra.Command{
 
 func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 
-	cfg := pbf.DecoderConfig{NCpu: ncpu}
-
-	d, err := pbf.NewDecoder(context.Background(), in, cfg)
+	d, err := pbf.NewDecoder(context.Background(), in, pbf.WithNCpus(ncpu))
 	if err != nil {
 		log.Fatal(err)
 	}

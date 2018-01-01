@@ -30,8 +30,15 @@ import (
 )
 
 const (
-	initialBufferSize = 1024 * 1024
+	DefaultBufferSize           = 1024 * 1024
+	DefaultInputChannelLength   = 16
+	DefaultOutputChannelLength  = 8
+	DefaultDecodedChannelLength = 8000
 )
+
+func DefaultNCpu() uint16 {
+	return uint16(runtime.GOMAXPROCS(-1))
+}
 
 type encoded struct {
 	header *protobuf.BlobHeader
@@ -56,51 +63,77 @@ type Decoder struct {
 	cancel context.CancelFunc
 }
 
-// DecoderConfig provides optional configuration parameters for Decoder construction.
-type DecoderConfig struct {
-	ProtoBufferSize      int    // buffer size for protobuf un-marshaling
-	InputChannelLength   int    // channel length of raw blobs
-	OutputChannelLength  int    // channel length of decoded arrays of element
-	DecodedChannelLength int    // channel length of decoded elements coalesced from output channels
-	NCpu                 uint16 // the number of CPUs to use for background processing
+// decoderOptions provides optional configuration parameters for Decoder construction.
+type decoderOptions struct {
+	protoBufferSize      int    // buffer size for protobuf un-marshaling
+	inputChannelLength   int    // channel length of raw blobs
+	outputChannelLength  int    // channel length of decoded arrays of element
+	decodedChannelLength int    // channel length of decoded elements coalesced from output channels
+	nCpu                 uint16 // the number of CPUs to use for background processing
 }
 
-// DfltDecoderConfig provides a default configuration for decoders.
-var DfltDecoderConfig = DecoderConfig{
-	ProtoBufferSize:      initialBufferSize,
-	InputChannelLength:   16,
-	OutputChannelLength:  8,
-	DecodedChannelLength: 8000,
-	NCpu:                 uint16(runtime.GOMAXPROCS(-1)),
+// DecoderOption configures how we set up the decoder.
+type DecoderOption func(*decoderOptions)
+
+// WithProtoBufferSize lets you set the buffer size for protobuf un-marshaling.
+func WithProtoBufferSize(s int) DecoderOption {
+	return func(o *decoderOptions) {
+		o.protoBufferSize = s
+	}
+}
+
+// WithInputChannelLength lets you set the channel length of raw blobs.
+func WithInputChannelLength(l int) DecoderOption {
+	return func(o *decoderOptions) {
+		o.inputChannelLength = l
+	}
+}
+
+// WithOutputChannelLength lets you set the channel length of decoded arrays of element.
+func WithOutputChannelLength(l int) DecoderOption {
+	return func(o *decoderOptions) {
+		o.outputChannelLength = l
+	}
+}
+
+// WithDecodedChannelLength lets you set the channel length of decoded elements coalesced from output channels.
+func WithDecodedChannelLength(l int) DecoderOption {
+	return func(o *decoderOptions) {
+		o.decodedChannelLength = l
+	}
+}
+
+// WithNCpus lets you set the number of CPUs to use for background processing.
+func WithNCpus(n uint16) DecoderOption {
+	return func(o *decoderOptions) {
+		o.nCpu = n
+	}
+}
+
+// defaultDecoderConfig provides a default configuration for decoders.
+var defaultDecoderConfig = decoderOptions{
+	protoBufferSize:      DefaultBufferSize,
+	inputChannelLength:   DefaultInputChannelLength,
+	outputChannelLength:  DefaultOutputChannelLength,
+	decodedChannelLength: DefaultDecodedChannelLength,
+	nCpu:                 DefaultNCpu(),
 }
 
 // NewDecoder returns a new decoder, configured with cfg, that reads from
 // reader.  The decoder is initialized with the OSM header.
-func NewDecoder(ctx context.Context, reader io.Reader, cfg DecoderConfig) (*Decoder, error) {
+func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*Decoder, error) {
 
 	d := &Decoder{}
-	c := DfltDecoderConfig
+	c := defaultDecoderConfig
 
-	if cfg.ProtoBufferSize > 0 {
-		c.ProtoBufferSize = cfg.ProtoBufferSize
-	}
-	if cfg.InputChannelLength > 0 {
-		c.InputChannelLength = cfg.InputChannelLength
-	}
-	if cfg.OutputChannelLength > 0 {
-		c.OutputChannelLength = cfg.OutputChannelLength
-	}
-	if cfg.DecodedChannelLength > 0 {
-		c.DecodedChannelLength = cfg.DecodedChannelLength
-	}
-	if cfg.NCpu > 0 {
-		c.NCpu = cfg.NCpu
+	for _, opt := range opts {
+		opt(&c)
 	}
 
 	ctx, d.cancel = context.WithCancel(ctx)
 
 	r := newBlobReader(reader)
-	buf := bytes.NewBuffer(make([]byte, 0, c.ProtoBufferSize))
+	buf := bytes.NewBuffer(make([]byte, 0, c.protoBufferSize))
 
 	h, err := r.readBlobHeader(buf)
 	if err != nil {
@@ -150,11 +183,11 @@ func (d *Decoder) Close() {
 
 // read obtains OSM blobs and sends them down, in a round-robin manner, a list
 // of channels to be decoded.
-func read(ctx context.Context, b blobReader, cfg DecoderConfig) (inputs []chan encoded) {
+func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan encoded) {
 
-	n := cfg.NCpu
+	n := cfg.nCpu
 	for i := uint16(0); i < n; i++ {
-		inputs = append(inputs, make(chan encoded, cfg.InputChannelLength))
+		inputs = append(inputs, make(chan encoded, cfg.inputChannelLength))
 	}
 
 	go func() {
@@ -164,7 +197,7 @@ func read(ctx context.Context, b blobReader, cfg DecoderConfig) (inputs []chan e
 			}
 		}()
 
-		buffer := bytes.NewBuffer(make([]byte, 0, cfg.ProtoBufferSize))
+		buffer := bytes.NewBuffer(make([]byte, 0, cfg.protoBufferSize))
 		var i uint16
 		for {
 			input := inputs[i]
@@ -198,11 +231,11 @@ func read(ctx context.Context, b blobReader, cfg DecoderConfig) (inputs []chan e
 // decode decodes blob/header pairs into an array of OSM elements.  These
 // arrays are placed onto an output channel where they will be coalesced into
 // their correct order.
-func decode(input <-chan encoded, cfg DecoderConfig) (output chan decoded) {
+func decode(input <-chan encoded, cfg decoderOptions) (output chan decoded) {
 
-	output = make(chan decoded, cfg.OutputChannelLength)
+	output = make(chan decoded, cfg.outputChannelLength)
 
-	buf := bytes.NewBuffer(make([]byte, 0, cfg.ProtoBufferSize))
+	buf := bytes.NewBuffer(make([]byte, 0, cfg.protoBufferSize))
 
 	go func() {
 		defer close(output)
@@ -229,9 +262,9 @@ func decode(input <-chan encoded, cfg DecoderConfig) (output chan decoded) {
 
 // coalesce merges the list of channels in a round-robin manner and sends the
 // elements in pairs down a channel of pairs.
-func coalesce(cfg DecoderConfig, outputs ...chan decoded) (pairs chan pair) {
+func coalesce(cfg decoderOptions, outputs ...chan decoded) (pairs chan pair) {
 
-	pairs = make(chan pair, cfg.DecodedChannelLength)
+	pairs = make(chan pair, cfg.decodedChannelLength)
 
 	go func() {
 		defer close(pairs)

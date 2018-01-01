@@ -44,25 +44,22 @@ func BenchmarkLondon(b *testing.B) {
 	}
 
 	pbs, _ := strconv.Atoi(os.Getenv("PBF_PROTO_BUFFER_SIZE"))
-	ibl, _ := strconv.Atoi(os.Getenv("PBF_INPUT_CHANNEL_LENGTH"))
+	icl, _ := strconv.Atoi(os.Getenv("PBF_INPUT_CHANNEL_LENGTH"))
 	ocl, _ := strconv.Atoi(os.Getenv("PBF_OUTPUT_CHANNEL_LENGTH"))
 	dcl, _ := strconv.Atoi(os.Getenv("PBF_DECODED_CHANNEL_LENGTH"))
 	ncpu, _ := strconv.Atoi(os.Getenv("PBF_NCPU"))
-
-	cfg := DecoderConfig{
-		ProtoBufferSize:      pbs,
-		InputChannelLength:   ibl,
-		OutputChannelLength:  ocl,
-		DecodedChannelLength: dcl,
-		NCpu:                 uint16(ncpu),
-	}
 
 	for n := 0; n < b.N; n++ {
 		if _, err = in.Seek(0, 0); err != nil {
 			b.Fatal(err)
 		}
 
-		if decoder, err := NewDecoder(context.Background(), in, cfg); err != nil {
+		if decoder, err := NewDecoder(context.Background(), in,
+			WithProtoBufferSize(pbs),
+			WithInputChannelLength(icl),
+			WithOutputChannelLength(ocl),
+			WithDecodedChannelLength(dcl),
+			WithNCpus(uint16(ncpu))); err != nil {
 			b.Fatal(err)
 		} else {
 			for {
