@@ -112,6 +112,10 @@ func (b BoundingBox) EqualWithin(o BoundingBox, eps Epsilon) bool {
 		b.Bottom.EqualWithin(o.Bottom, eps)
 }
 
+func (b BoundingBox) Contains(lon Degrees, lat Degrees) bool {
+	return b.Left <= lon && lon <= b.Right && b.Bottom <= lat && lat <= b.Top
+}
+
 func (b BoundingBox) String() string {
 	return fmt.Sprintf("[%s, %s, %s, %s]",
 		humanize.Ftoa(float64(b.Left)), humanize.Ftoa(float64(b.Bottom)),
@@ -144,7 +148,7 @@ type Info struct {
 // latitude and longitude. Each node comprises at least an id number and a
 // pair of coordinates.
 type Node struct {
-	ID   int64
+	ID   uint64
 	Tags map[string]string
 	Info *Info
 	Lat  Degrees
@@ -153,10 +157,10 @@ type Node struct {
 
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
 type Way struct {
-	ID      int64
+	ID      uint64
 	Tags    map[string]string
 	Info    *Info
-	NodeIDs []int64
+	NodeIDs []uint64
 }
 
 // ElementType is an enumeration of relation types.
@@ -175,7 +179,7 @@ const (
 
 // Member represents an element that
 type Member struct {
-	ID   int64
+	ID   uint64
 	Type ElementType
 	Role string
 }
@@ -183,7 +187,7 @@ type Member struct {
 // Relation is a multi-purpose data structure that documents a relationship
 // between two or more data elements (nodes, ways, and/or other relations).
 type Relation struct {
-	ID      int64
+	ID      uint64
 	Tags    map[string]string
 	Info    *Info
 	Members []Member

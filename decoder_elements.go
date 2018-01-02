@@ -44,7 +44,7 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface
 	elements = make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Node{
-			ID:   node.GetId(),
+			ID:   uint64(node.GetId()),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
 			Lat:  toDegrees(c.latOffset, c.granularity, node.GetLat()),
@@ -70,7 +70,7 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{
 		lon = lons[i] + lon
 
 		elements[i] = &Node{
-			ID:   id,
+			ID:   uint64(id),
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
 			Lat:  toDegrees(c.latOffset, c.granularity, lat),
@@ -84,15 +84,15 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		refs := node.GetRefs()
-		nodeIDs := make([]int64, len(refs))
+		nodeIDs := make([]uint64, len(refs))
 		var nodeID int64
 		for j, delta := range refs {
 			nodeID = delta + nodeID
-			nodeIDs[j] = nodeID
+			nodeIDs[j] = uint64(nodeID)
 		}
 
 		elements[i] = &Way{
-			ID:      node.GetId(),
+			ID:      uint64(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			NodeIDs: nodeIDs,
 			Info:    c.decodeInfo(node.GetInfo()),
@@ -105,7 +105,7 @@ func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []interface{}
 	elements := make([]interface{}, len(nodes))
 	for i, node := range nodes {
 		elements[i] = &Relation{
-			ID:      node.GetId(),
+			ID:      uint64(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info:    c.decodeInfo(node.GetInfo()),
 			Members: c.decodeMembers(node),
@@ -123,7 +123,7 @@ func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
 	for i := range memids {
 		memid = memids[i] + memid
 		members[i] = Member{
-			ID:   memid,
+			ID:   uint64(memid),
 			Type: decodeMemberType(memtypes[i]),
 			Role: c.strings[memroles[i]],
 		}
