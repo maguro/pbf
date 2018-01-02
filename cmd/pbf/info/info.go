@@ -105,6 +105,7 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer d.Close()
 
 	info := &extendedHeader{Header: d.Header}
 
