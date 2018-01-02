@@ -11,7 +11,7 @@ A golang based OpenStreetMap PBF encoder/decoder with a handy command line utili
 
 ## pbf Command Line Utility
 
-The `pbf` cli can be installed using the `go install` command:
+The `pbf` CLI can be installed using the `go install` command:
 
     $ go install m4o.io/pbf/cmd/pbf
 
