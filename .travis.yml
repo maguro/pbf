@@ -16,14 +16,12 @@ before_install:
 
 install:
   - dep ensure
-  - go get -u golang.org/x/tools/cmd/goimports
   - go get -u github.com/golang/lint/golint
   - go get -u github.com/fzipp/gocyclo
   - . ./build/vanity.sh
 
 script:
   - go install
-  - test -z "$(goimports -l -w $(go list -f {{.Dir}}/*.go ./...  | grep -v /vendor/) | tee /dev/stderr)"
   - golint $(go list -f {{.Dir}} ./... | grep -v /vendor/)
   - gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
   - go tool vet $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
