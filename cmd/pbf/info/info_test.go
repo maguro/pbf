@@ -73,11 +73,11 @@ func TestRenderJSON(t *testing.T) {
 	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 	h := pbf.Header{
-		BoundingBox:                      bbox,
-		RequiredFeatures:                 []string{"OsmSchema-V0.6", "DenseNodes"},
-		OptionalFeatures:                 []string(nil),
-		WritingProgram:                   "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)",
-		Source:                           "",
+		BoundingBox:      bbox,
+		RequiredFeatures: []string{"OsmSchema-V0.6", "DenseNodes"},
+		OptionalFeatures: []string(nil),
+		WritingProgram:   "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)",
+		Source:           "",
 		OsmosisReplicationTimestamp:      ts,
 		OsmosisReplicationSequenceNumber: int64(0),
 		OsmosisReplicationBaseURL:        "",
@@ -120,11 +120,11 @@ func TestRenderText(t *testing.T) {
 	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 	h := pbf.Header{
-		BoundingBox:                      bbox,
-		RequiredFeatures:                 []string{"OsmSchema-V0.6", "DenseNodes"},
-		OptionalFeatures:                 []string{"Pbf"},
-		WritingProgram:                   "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)",
-		Source:                           "pbf",
+		BoundingBox:      bbox,
+		RequiredFeatures: []string{"OsmSchema-V0.6", "DenseNodes"},
+		OptionalFeatures: []string{"Pbf"},
+		WritingProgram:   "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)",
+		Source:           "pbf",
 		OsmosisReplicationTimestamp:      ts,
 		OsmosisReplicationSequenceNumber: int64(0),
 		OsmosisReplicationBaseURL:        "https://github.com/maguro/pbf",

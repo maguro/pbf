@@ -361,10 +361,10 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 	}
 
 	header := &Header{
-		RequiredFeatures:                 hb.GetRequiredFeatures(),
-		OptionalFeatures:                 hb.GetOptionalFeatures(),
-		WritingProgram:                   hb.GetWritingprogram(),
-		Source:                           hb.GetSource(),
+		RequiredFeatures: hb.GetRequiredFeatures(),
+		OptionalFeatures: hb.GetOptionalFeatures(),
+		WritingProgram:   hb.GetWritingprogram(),
+		Source:           hb.GetSource(),
 		OsmosisReplicationBaseURL:        hb.GetOsmosisReplicationBaseUrl(),
 		OsmosisReplicationSequenceNumber: hb.GetOsmosisReplicationSequenceNumber(),
 	}
