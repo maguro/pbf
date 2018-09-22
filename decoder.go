@@ -30,12 +30,20 @@ import (
 )
 
 const (
+	// DefaultBufferSize is the default buffer size for protobuf un-marshaling
 	DefaultBufferSize           = 1024 * 1024
+
+	// DefaultInputChannelLength is the default channel length of raw blobs
 	DefaultInputChannelLength   = 16
+
+	// DefaultOutputChannelLength is the default channel length of decoded arrays of element
 	DefaultOutputChannelLength  = 8
+
+	// DefaultDecodedChannelLength is the default channel length of decoded elements coalesced from output channels
 	DefaultDecodedChannelLength = 8000
 )
 
+// DefaultNCpu provides the default number of CPUs.
 func DefaultNCpu() uint16 {
 	return uint16(runtime.GOMAXPROCS(-1))
 }

@@ -112,6 +112,7 @@ func (b BoundingBox) EqualWithin(o BoundingBox, eps Epsilon) bool {
 		b.Bottom.EqualWithin(o.Bottom, eps)
 }
 
+// Contains checks if the bounding box contains the lon lat point.
 func (b BoundingBox) Contains(lon Degrees, lat Degrees) bool {
 	return b.Left <= lon && lon <= b.Right && b.Bottom <= lat && lat <= b.Top
 }
