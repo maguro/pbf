@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/golang/geo/s1"
 )
 
