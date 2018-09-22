@@ -77,7 +77,7 @@ type decoderOptions struct {
 	inputChannelLength   int    // channel length of raw blobs
 	outputChannelLength  int    // channel length of decoded arrays of element
 	decodedChannelLength int    // channel length of decoded elements coalesced from output channels
-	nCpu                 uint16 // the number of CPUs to use for background processing
+	nCPU                 uint16 // the number of CPUs to use for background processing
 }
 
 // DecoderOption configures how we set up the decoder.
@@ -114,7 +114,7 @@ func WithDecodedChannelLength(l int) DecoderOption {
 // WithNCpus lets you set the number of CPUs to use for background processing.
 func WithNCpus(n uint16) DecoderOption {
 	return func(o *decoderOptions) {
-		o.nCpu = n
+		o.nCPU = n
 	}
 }
 
@@ -124,7 +124,7 @@ var defaultDecoderConfig = decoderOptions{
 	inputChannelLength:   DefaultInputChannelLength,
 	outputChannelLength:  DefaultOutputChannelLength,
 	decodedChannelLength: DefaultDecodedChannelLength,
-	nCpu:                 DefaultNCpu(),
+	nCPU:                 DefaultNCpu(),
 }
 
 // NewDecoder returns a new decoder, configured with cfg, that reads from
@@ -193,7 +193,7 @@ func (d *Decoder) Close() {
 // of channels to be decoded.
 func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan encoded) {
 
-	n := cfg.nCpu
+	n := cfg.nCPU
 	for i := uint16(0); i < n; i++ {
 		inputs = append(inputs, make(chan encoded, cfg.inputChannelLength))
 	}
