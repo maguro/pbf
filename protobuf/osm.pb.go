@@ -22,7 +22,7 @@ It has these top-level messages:
 	Way
 	Relation
 */
-package protobuf
+package protobuf  // import "m4o.io/pbf/protobuf"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

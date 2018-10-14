@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+package pbf // import "m4o.io/pbf"
 
 //go:generate stringer -type=ElementType
 
