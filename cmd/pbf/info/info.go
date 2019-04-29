@@ -55,6 +55,7 @@ func init() {
 	flags.Uint16P("output-length", "o", pbf.DefaultOutputChannelLength, "channel length of decoded arrays of element")
 	flags.Uint16P("decoded-length", "d", pbf.DefaultDecodedChannelLength, "channel length of decoded elements coalesced from output channels")
 	flags.Uint16P("cpu", "c", pbf.DefaultNCpu(), "number of CPUs to use for scanning")
+	flags.BoolP("silent", "s", false, "silence progress bar")
 }
 
 var infoCmd = &cobra.Command{
@@ -64,12 +65,22 @@ var infoCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		win, err := cli.WrapInputFile(in)
+		flags := cmd.Flags()
+
+		silent, err := flags.GetBool("silent")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		flags := cmd.Flags()
+		var win io.ReadCloser
+		if silent {
+			win = in
+		} else {
+			win, err = cli.WrapInputFile(in)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 
 		ncpu, err := flags.GetUint16("cpu")
 		if err != nil {
