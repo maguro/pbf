@@ -9,6 +9,7 @@ go_import_path: m4o.io/pbf
 # These will both be unnecessary when Go 1.14 lands.
 env:
   - GO111MODULE=on
+  - GOLANGCILINT_VERSION=1.22.2
 go:
   - 1.11.x
   - 1.12.x
@@ -16,7 +17,7 @@ go:
   - tip
 install:
   - go get github.com/fzipp/gocyclo
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin v1.12.5
+  - curl -fsSL https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCILINT_VERSION)/golangci-lint-$(GOLANGCILINT_VERSION)-$(HOSTOS)-$(HOSTARCH).tar.gz | tar -xz --strip-components=1 -C $(TOOLS_HOST_DIR)/tmp-golangci-lint
   - go install github.com/mattn/goveralls
 script:
   - if [ "$TRAVIS_OS_NAME" != 'windows' ]; then $GOPATH/bin/gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./...) ; fi
