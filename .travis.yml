@@ -18,7 +18,8 @@ go:
   - tip
 install:
   - go get github.com/fzipp/gocyclo
-  - curl -fsSL "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCILINT_VERSION}/golangci-lint-${GOLANGCILINT_VERSION}-${TRAVIS_OS_NAME}-${TRAVIS_CPU_ARCH}.tar.gz" | tar -xz --strip-components=1 -C "${TRAVIS_BUILD_DIR}/tmp-golangci-lint"
+  - mkdir -p /tmp/tmp-golangci-lint
+  - curl -fsSL "https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCILINT_VERSION}/golangci-lint-${GOLANGCILINT_VERSION}-${TRAVIS_OS_NAME}-${TRAVIS_CPU_ARCH}.tar.gz" | tar -xz --strip-components=1 -C /tmp/tmp-golangci-lint
   - go install github.com/mattn/goveralls
 script:
   - if [ "$TRAVIS_OS_NAME" != 'windows' ]; then $GOPATH/bin/gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./...) ; fi
