@@ -15,7 +15,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/pflag"
@@ -54,5 +53,5 @@ func (r *readerValue) String() string {
 	if *r.value == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s", (*r.value).Name())
+	return (*r.value).Name()
 }

@@ -1,31 +1,27 @@
-sudo: required
-
+os:
+  - linux
+  - osx
+  - windows
+sudo: false
 language: go
-
+go_import_path: m4o.io/pbf
+# Force-enable Go modules. Also force go to use the code in vendor/
+# These will both be unnecessary when Go 1.14 lands.
 env:
-- DEP_VERSION="0.5.0"
-
+  - GO111MODULE=on
 go:
-  - go1.10.4
-  - go1.11
-
-before_install:
-- curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep
-- chmod +x $GOPATH/bin/dep
-
+  - 1.11.x
+  - 1.12.x
+  - 1.13.x
+  - tip
 install:
-  - dep ensure
-  - go get -u golang.org/x/lint/golint
-  - go get -u github.com/fzipp/gocyclo
-  - . ./build/vanity.sh
-
+  - go get github.com/fzipp/gocyclo
+  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin v1.12.5
+  - go install github.com/mattn/goveralls
 script:
-  - go install
-  - golint $(go list -f {{.Dir}} ./... | grep -v /vendor/)
-  - gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
-  - go tool vet $(go list -f {{.Dir}}/*.go ./... | grep -v /vendor/)
-  - ./build/codecov.sh
+  - gocyclo -over 15 $(go list -f {{.Dir}}/*.go ./...)
+  - golangci-lint run
+  - $GOPATH/bin/goveralls -service=travis-ci -race -v
   - PBF_PROTO_BUFFER_SIZE=33554432 PBF_NCPU=4 go test -bench=. -benchtime=10s
-
 after_success:
   - bash <(curl -s https://codecov.io/bash)

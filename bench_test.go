@@ -37,7 +37,7 @@ func BenchmarkLondon(b *testing.B) {
 				b.Errorf("Error opening trace file: %v", err)
 			} else {
 				defer f.Close()
-				trace.Start(f)
+				_ = trace.Start(f)
 				defer trace.Stop()
 			}
 		}
