@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,17 +35,20 @@ func newBlobReader(r io.Reader) blobReader {
 // The header is used when decoding blobs into OSM elements.
 func (b blobReader) readBlobHeader(buffer *bytes.Buffer) (header *protobuf.BlobHeader, err error) {
 	var size uint32
+
 	err = binary.Read(b.r, binary.BigEndian, &size)
 	if err != nil {
 		return nil, err
 	}
 
 	buffer.Reset()
+
 	if _, err := io.CopyN(buffer, b.r, int64(size)); err != nil {
 		return nil, err
 	}
 
 	header = &protobuf.BlobHeader{}
+
 	if err := proto.UnmarshalMerge(buffer.Bytes(), header); err != nil {
 		return nil, err
 	}
@@ -59,11 +62,13 @@ func (b blobReader) readBlob(buffer *bytes.Buffer, header *protobuf.BlobHeader) 
 	size := header.GetDatasize()
 
 	buffer.Reset()
+
 	if _, err := io.CopyN(buffer, b.r, int64(size)); err != nil {
 		return nil, err
 	}
 
 	blob := &protobuf.Blob{}
+
 	if err := proto.UnmarshalMerge(buffer.Bytes(), blob); err != nil {
 		return nil, err
 	}

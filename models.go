@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,6 +84,7 @@ func round(val float64) int32 {
 	if val < 0 {
 		return int32(val - 0.5)
 	}
+
 	return int32(val + 0.5)
 }
 
@@ -93,6 +94,7 @@ func ParseDegrees(s string) (Degrees, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return Degrees(u), nil
 }
 

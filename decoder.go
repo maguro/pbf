@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ import (
 
 const (
 	// DefaultBufferSize is the default buffer size for protobuf un-marshaling
-	DefaultBufferSize           = 1024 * 1024
+	DefaultBufferSize = 1024 * 1024
 
 	// DefaultInputChannelLength is the default channel length of raw blobs
-	DefaultInputChannelLength   = 16
+	DefaultInputChannelLength = 16
 
 	// DefaultOutputChannelLength is the default channel length of decoded arrays of element
-	DefaultOutputChannelLength  = 8
+	DefaultOutputChannelLength = 8
 
 	// DefaultDecodedChannelLength is the default channel length of decoded elements coalesced from output channels
 	DefaultDecodedChannelLength = 8000
@@ -130,7 +130,6 @@ var defaultDecoderConfig = decoderOptions{
 // NewDecoder returns a new decoder, configured with cfg, that reads from
 // reader.  The decoder is initialized with the OSM header.
 func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*Decoder, error) {
-
 	d := &Decoder{}
 	c := defaultDecoderConfig
 
@@ -147,10 +146,12 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 	if err != nil {
 		return nil, err
 	}
+
 	b, err := r.readBlob(buf, h)
 	if err != nil {
 		return nil, err
 	}
+
 	e, err := elements(h, b, bytes.NewBuffer(make([]byte, 0, 1024)))
 	if err != nil {
 		return nil, err
@@ -160,6 +161,7 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(e[0]))
 		return nil, err
 	}
+
 	d.Header = *e[0].(*Header)
 
 	// create decoding pipelines
@@ -167,6 +169,7 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 	for _, input := range read(ctx, r, c) {
 		outputs = append(outputs, decode(input, c))
 	}
+
 	d.pairs = coalesce(c, outputs...)
 
 	return d, nil
@@ -181,6 +184,7 @@ func (d *Decoder) Decode() (interface{}, error) {
 	if !more {
 		return nil, io.EOF
 	}
+
 	return decoded.element, decoded.err
 }
 
@@ -192,7 +196,6 @@ func (d *Decoder) Close() {
 // read obtains OSM blobs and sends them down, in a round-robin manner, a list
 // of channels to be decoded.
 func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan encoded) {
-
 	n := cfg.nCPU
 	for i := uint16(0); i < n; i++ {
 		inputs = append(inputs, make(chan encoded, cfg.inputChannelLength))
@@ -206,7 +209,9 @@ func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan 
 		}()
 
 		buffer := bytes.NewBuffer(make([]byte, 0, cfg.protoBufferSize))
+
 		var i uint16
+
 		for {
 			input := inputs[i]
 			i = (i + 1) % n
@@ -233,14 +238,13 @@ func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan 
 		}
 	}()
 
-	return
+	return inputs
 }
 
 // decode decodes blob/header pairs into an array of OSM elements.  These
 // arrays are placed onto an output channel where they will be coalesced into
 // their correct order.
 func decode(input <-chan encoded, cfg decoderOptions) (output chan decoded) {
-
 	output = make(chan decoded, cfg.outputChannelLength)
 
 	buf := bytes.NewBuffer(make([]byte, 0, cfg.protoBufferSize))
@@ -271,14 +275,15 @@ func decode(input <-chan encoded, cfg decoderOptions) (output chan decoded) {
 // coalesce merges the list of channels in a round-robin manner and sends the
 // elements in pairs down a channel of pairs.
 func coalesce(cfg decoderOptions, outputs ...chan decoded) (pairs chan pair) {
-
 	pairs = make(chan pair, cfg.decodedChannelLength)
 
 	go func() {
 		defer close(pairs)
 
 		n := len(outputs)
+
 		var i int
+
 		for {
 			output := outputs[i]
 			i = (i + 1) % n
@@ -301,14 +306,13 @@ func coalesce(cfg decoderOptions, outputs ...chan decoded) (pairs chan pair) {
 		}
 	}()
 
-	return
+	return pairs
 }
 
 // elements unmarshals an array of OSM elements from an array of protobuf encoded
 // bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
 // decompression.
 func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
-
 	var buf []byte
 
 	switch {
@@ -320,19 +324,24 @@ func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.B
 		if err != nil {
 			return nil, err
 		}
+
 		zlibBuf.Reset()
+
 		rawBufferSize := int(blob.GetRawSize() + bytes.MinRead)
 		if rawBufferSize > zlibBuf.Cap() {
 			zlibBuf.Grow(rawBufferSize)
 		}
+
 		_, err = zlibBuf.ReadFrom(r)
 		if err != nil {
 			return nil, err
 		}
+
 		if zlibBuf.Len() != int(blob.GetRawSize()) {
 			err = fmt.Errorf("raw blob data size %d but expected %d", zlibBuf.Len(), blob.GetRawSize())
 			return nil, err
 		}
+
 		buf = zlibBuf.Bytes()
 
 	default:
@@ -340,15 +349,19 @@ func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.B
 	}
 
 	ht := *header.Type
-	if ht == "OSMHeader" {
-		h, err := parseOSMHeader(buf)
-		if err != nil {
-			return nil, err
+
+	switch ht {
+	case "OSMHeader":
+		{
+			h, err := parseOSMHeader(buf)
+			if err != nil {
+				return nil, err
+			}
+			return []interface{}{h}, nil
 		}
-		return []interface{}{h}, nil
-	} else if ht == "OSMData" {
+	case "OSMData":
 		return parsePrimitiveBlock(buf)
-	} else {
+	default:
 		return nil, fmt.Errorf("unknown header type %s", ht)
 	}
 }
@@ -361,10 +374,10 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 	}
 
 	header := &Header{
-		RequiredFeatures: hb.GetRequiredFeatures(),
-		OptionalFeatures: hb.GetOptionalFeatures(),
-		WritingProgram:   hb.GetWritingprogram(),
-		Source:           hb.GetSource(),
+		RequiredFeatures:                 hb.GetRequiredFeatures(),
+		OptionalFeatures:                 hb.GetOptionalFeatures(),
+		WritingProgram:                   hb.GetWritingprogram(),
+		Source:                           hb.GetSource(),
 		OsmosisReplicationBaseURL:        hb.GetOsmosisReplicationBaseUrl(),
 		OsmosisReplicationSequenceNumber: hb.GetOsmosisReplicationSequenceNumber(),
 	}

@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ func NewReaderValue(def *os.File, p **os.File, typename string) pflag.Value {
 		typename: typename,
 	}
 	*bbv.value = def
+
 	return bbv
 }
 
@@ -41,7 +42,9 @@ func (r *readerValue) Set(val string) error {
 	if err != nil {
 		return err
 	}
+
 	*r.value = f
+
 	return nil
 }
 
@@ -53,5 +56,6 @@ func (r *readerValue) String() string {
 	if *r.value == nil {
 		return ""
 	}
+
 	return (*r.value).Name()
 }

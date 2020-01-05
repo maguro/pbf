@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 
 func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
 	elements = make([]interface{}, len(nodes))
+
 	for i, node := range nodes {
 		elements[i] = &Node{
 			ID:   uint64(node.GetId()),
@@ -51,6 +52,7 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface
 			Lon:  toDegrees(c.lonOffset, c.granularity, node.GetLon()),
 		}
 	}
+
 	return elements
 }
 
@@ -77,15 +79,19 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{
 			Lon:  toDegrees(c.lonOffset, c.granularity, lon),
 		}
 	}
+
 	return elements
 }
 
 func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
 	elements := make([]interface{}, len(nodes))
+
 	for i, node := range nodes {
 		refs := node.GetRefs()
 		nodeIDs := make([]uint64, len(refs))
+
 		var nodeID int64
+
 		for j, delta := range refs {
 			nodeID = delta + nodeID
 			nodeIDs[j] = uint64(nodeID)
@@ -98,11 +104,13 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
 			Info:    c.decodeInfo(node.GetInfo()),
 		}
 	}
+
 	return elements
 }
 
 func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []interface{} {
 	elements := make([]interface{}, len(nodes))
+
 	for i, node := range nodes {
 		elements[i] = &Relation{
 			ID:      uint64(node.GetId()),
@@ -111,6 +119,7 @@ func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []interface{}
 			Members: c.decodeMembers(node),
 		}
 	}
+
 	return elements
 }
 
@@ -119,7 +128,9 @@ func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
 	memtypes := node.GetTypes()
 	memroles := node.GetRolesSid()
 	members := make([]Member, len(memids))
+
 	var memid int64
+
 	for i := range memids {
 		memid = memids[i] + memid
 		members[i] = Member{
@@ -134,9 +145,11 @@ func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
 
 func (c *blockContext) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	tags := make(map[string]string, len(keyIDs))
+
 	for i, keyID := range keyIDs {
 		tags[c.strings[keyID]] = c.strings[valIDs[i]]
 	}
+
 	return tags
 }
 
@@ -154,6 +167,7 @@ func (c *blockContext) decodeInfo(info *protobuf.Info) *Info {
 			i.Visible = info.GetVisible()
 		}
 	}
+
 	return i
 }
 
@@ -245,9 +259,11 @@ type tagsContext struct {
 
 func (c *blockContext) newTagsContext(keyVals []int32) *tagsContext {
 	tc := &tagsContext{strings: c.strings}
+
 	if len(keyVals) != 0 {
 		tc.keyVals = keyVals
 	}
+
 	return tc
 }
 
@@ -255,13 +271,17 @@ func (tic *tagsContext) decodeTags() map[string]string {
 	if tic.keyVals == nil {
 		return map[string]string{}
 	}
+
 	tags := make(map[string]string)
 	i := tic.i
+
 	for tic.keyVals[i] > 0 {
 		tags[tic.strings[tic.keyVals[i]]] = tic.strings[tic.keyVals[i+1]]
 		i += 2
 	}
+
 	tic.i = i + 1
+
 	return tags
 }
 

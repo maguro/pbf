@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ func TestDecoderStop(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error reading file: %v", err)
 	}
+
 	defer in.Close()
 
 	// decode header blob
@@ -53,6 +54,7 @@ func TestDecoderStop(t *testing.T) {
 	assert.Equal(t, reflect.TypeOf(Header{}), reflect.TypeOf(decoder.Header))
 
 	timer := time.NewTimer(time.Millisecond * 250)
+
 	go func() {
 		<-timer.C
 		decoder.Close()
@@ -61,6 +63,7 @@ func TestDecoderStop(t *testing.T) {
 
 	// decode elements
 	var nEntries int
+
 	for {
 		e, err := decoder.Decode()
 		if err != nil {
@@ -70,6 +73,7 @@ func TestDecoderStop(t *testing.T) {
 				break
 			}
 		}
+
 		assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(e))
 
 		nEntries++
@@ -83,6 +87,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	if err != nil {
 		t.Errorf("Error reading file: %v", err)
 	}
+
 	defer in.Close()
 
 	// decode header blob
@@ -95,6 +100,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 
 	// decode elements
 	var nEntries int
+
 	for {
 		e, err := decoder.Decode()
 		if err != nil {
@@ -104,6 +110,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 				break
 			}
 		}
+
 		assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(e))
 
 		nEntries++

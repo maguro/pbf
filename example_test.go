@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,24 +29,29 @@ func Example() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer in.Close()
 
 	const size = 3 * 1024 * 1024
-	d, err := parser.NewDecoder(context.Background(), in,
-		parser.WithProtoBufferSize(size),
-		parser.WithNCpus(2))
+
+	d, err := parser.NewDecoder(context.Background(), in, parser.WithProtoBufferSize(size), parser.WithNCpus(2))
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer d.Close()
 
 	var nc, wc, rc uint64
+
+done:
 	for {
-		if v, err := d.Decode(); err == io.EOF {
-			break
-		} else if err != nil {
+		v, err := d.Decode()
+		switch {
+		case err == io.EOF:
+			break done
+		case err != nil:
 			log.Fatal(err)
-		} else {
+		default:
 			switch v := v.(type) {
 			case *parser.Node:
 				// Process Node v.

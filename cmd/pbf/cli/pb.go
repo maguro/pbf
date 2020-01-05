@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,10 +37,12 @@ func WrapInputFile(f *os.File) (io.ReadCloser, error) {
 		// don't bother wrapping stdin
 		return os.Stdin, nil
 	}
+
 	fi, err := f.Stat()
 	if err != nil {
 		return nil, err
 	}
+
 	total := int(fi.Size())
 
 	bar := pb.New(total).SetUnits(pb.U_BYTES_DEC).SetWidth(79)
@@ -61,7 +63,6 @@ func (pb progressBar) Read(p []byte) (int, error) {
 // Close implements io.Closer.Close by closing the delegate instance of
 // ReadCloser as well as clearing the terminal line of progress output.
 func (pb progressBar) Close() error {
-
 	// make sure newline is not printed by Finish()
 	pb.bar.Output = nil
 	pb.bar.NotPrint = true

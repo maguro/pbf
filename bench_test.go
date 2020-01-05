@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,18 +28,18 @@ func BenchmarkLondon(b *testing.B) {
 	if err != nil {
 		b.Errorf("Error reading file: %v", err)
 	}
+
 	defer in.Close()
 
-	if t, err := strconv.ParseBool(os.Getenv("PBF_TRACE")); err == nil {
-		if t {
-			f, err := os.Create("trace.out")
-			if err != nil {
-				b.Errorf("Error opening trace file: %v", err)
-			} else {
-				defer f.Close()
-				_ = trace.Start(f)
-				defer trace.Stop()
-			}
+	t, err := strconv.ParseBool(os.Getenv("PBF_TRACE"))
+	if err == nil && t {
+		f, e := os.Create("trace.out")
+		if e != nil {
+			b.Errorf("Error opening trace file: %v", e)
+		} else {
+			defer f.Close()
+			_ = trace.Start(f)
+			defer trace.Stop()
 		}
 	}
 

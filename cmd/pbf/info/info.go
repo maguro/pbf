@@ -1,4 +1,4 @@
-// Copyright 2017-18 the original author or authors.
+// Copyright 2017-20 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ type extendedHeader struct {
 	RelationCount int64
 }
 
-func init() {
+func init() { //nolint:gochecknoinits
 	cli.RootCmd.AddCommand(infoCmd)
 
 	flags := infoCmd.Flags()
@@ -53,7 +53,8 @@ func init() {
 	flags.Uint32P("buffer-length", "b", pbf.DefaultBufferSize, "buffer size for protobuf un-marshaling")
 	flags.Uint32P("raw-length", "r", pbf.DefaultInputChannelLength, "channel length of raw blobs")
 	flags.Uint16P("output-length", "o", pbf.DefaultOutputChannelLength, "channel length of decoded arrays of element")
-	flags.Uint16P("decoded-length", "d", pbf.DefaultDecodedChannelLength, "channel length of decoded elements coalesced from output channels")
+	flags.Uint16P("decoded-length", "d", pbf.DefaultDecodedChannelLength,
+		"channel length of decoded elements coalesced from output channels")
 	flags.Uint16P("cpu", "c", pbf.DefaultNCpu(), "number of CPUs to use for scanning")
 	flags.BoolP("silent", "s", false, "silence progress bar")
 }
@@ -94,7 +95,8 @@ var infoCmd = &cobra.Command{
 
 		info := runInfo(win, ncpu, extended)
 
-		if err := win.Close(); err != nil {
+		err = win.Close()
+		if err != nil {
 			log.Fatal(err)
 		}
 
@@ -111,7 +113,6 @@ var infoCmd = &cobra.Command{
 }
 
 func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
-
 	d, err := pbf.NewDecoder(context.Background(), in, pbf.WithNCpus(ncpu))
 	if err != nil {
 		log.Fatal(err)
@@ -121,13 +122,17 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 	info := &extendedHeader{Header: d.Header}
 
 	var nc, wc, rc int64
+
 	if extended {
+	done:
 		for {
-			if v, err := d.Decode(); err == io.EOF {
-				break
-			} else if err != nil {
+			v, err := d.Decode()
+			switch {
+			case err == io.EOF:
+				break done
+			case err != nil:
 				log.Fatal(err)
-			} else {
+			default:
 				switch v := v.(type) {
 				case *pbf.Node:
 					// Process Node v.
@@ -160,10 +165,12 @@ func renderJSON(info *extendedHeader, extended bool) {
 	} else {
 		v = info.Header
 	}
+
 	b, err := json.Marshal(v)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Fprint(out, string(b))
 }
 
@@ -176,6 +183,7 @@ func renderTxt(info *extendedHeader, extended bool) {
 	fmt.Fprintf(out, "OsmosisReplicationTimestamp: %s\n", info.OsmosisReplicationTimestamp.UTC().Format(time.RFC3339))
 	fmt.Fprintf(out, "OsmosisReplicationSequenceNumber: %d\n", info.OsmosisReplicationSequenceNumber)
 	fmt.Fprintf(out, "OsmosisReplicationBaseURL: %s\n", info.OsmosisReplicationBaseURL)
+
 	if extended {
 		fmt.Fprintf(out, "NodeCount: %s\n", humanize.Comma(info.NodeCount))
 		fmt.Fprintf(out, "WayCount: %s\n", humanize.Comma(info.WayCount))
