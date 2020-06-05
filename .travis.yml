@@ -14,7 +14,7 @@ go:
   - 1.13.x
   - 1.14.x
 install:
-  - GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.24.0
   - go install github.com/mattn/goveralls
 script:
   - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then $GOPATH/bin/golangci-lint run ; fi
