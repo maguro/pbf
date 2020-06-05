@@ -20,7 +20,6 @@ import (
 	"os"
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -53,10 +52,10 @@ func TestDecoderStop(t *testing.T) {
 
 	assert.Equal(t, reflect.TypeOf(Header{}), reflect.TypeOf(decoder.Header))
 
-	timer := time.NewTimer(time.Millisecond * 250)
+	cancel := make(chan bool, 1)
 
 	go func() {
-		<-timer.C
+		<-cancel
 		decoder.Close()
 		decoder.Close()
 	}()
@@ -65,6 +64,9 @@ func TestDecoderStop(t *testing.T) {
 	var nEntries int
 
 	for {
+		if nEntries == 1000 {
+			cancel <- true
+		}
 		e, err := decoder.Decode()
 		if err != nil {
 			if err != io.EOF {
