@@ -67,6 +67,7 @@ func TestDecoderStop(t *testing.T) {
 		if nEntries == 1000 {
 			cancel <- true
 		}
+
 		e, err := decoder.Decode()
 		if err != nil {
 			if err != io.EOF {
