@@ -20,6 +20,7 @@ import (
 	"io"
 
 	"github.com/golang/protobuf/proto"
+
 	"m4o.io/pbf/protobuf"
 )
 

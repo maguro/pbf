@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+
 	"m4o.io/pbf/protobuf"
 )
 
