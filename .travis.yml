@@ -13,6 +13,7 @@ go:
   - 1.12.x
   - 1.13.x
   - 1.14.x
+  - 1.15.x
 before_install:
   - >
     if [ $TRAVIS_GO_VERSION =~ ^1\.13 -a "$TRAVIS_OS_NAME" = 'linux' ]; then
