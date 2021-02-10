@@ -22,7 +22,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/golang/geo/s1"
 )
 
@@ -56,7 +55,7 @@ func (d Degrees) String() string {
 	minutes := int(math.Floor(60 * (val - float64(degrees))))
 	seconds := 3600 * (val - float64(degrees) - (float64(minutes) / 60))
 
-	return fmt.Sprintf("%d\u00B0 %d' %s\"", degrees, minutes, humanize.Ftoa(seconds))
+	return fmt.Sprintf("%d\u00B0 %d' %s\"", degrees, minutes, ftoa(seconds))
 }
 
 // EqualWithin checks if two degrees are within a specific epsilon.
@@ -121,8 +120,8 @@ func (b BoundingBox) Contains(lon Degrees, lat Degrees) bool {
 
 func (b BoundingBox) String() string {
 	return fmt.Sprintf("[%s, %s, %s, %s]",
-		humanize.Ftoa(float64(b.Left)), humanize.Ftoa(float64(b.Bottom)),
-		humanize.Ftoa(float64(b.Right)), humanize.Ftoa(float64(b.Top)))
+		ftoa(float64(b.Left)), ftoa(float64(b.Bottom)),
+		ftoa(float64(b.Right)), ftoa(float64(b.Top)))
 }
 
 // Header is the contents of the OpenStreetMap PBF data file.
