@@ -25,7 +25,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/protobuf"
 )

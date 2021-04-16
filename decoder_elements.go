@@ -17,7 +17,7 @@ package pbf // import "m4o.io/pbf"
 import (
 	"time"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/protobuf"
 )

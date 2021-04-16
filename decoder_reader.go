@@ -19,7 +19,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/protobuf"
 )
@@ -50,7 +50,7 @@ func (b blobReader) readBlobHeader(buffer *bytes.Buffer) (header *protobuf.BlobH
 
 	header = &protobuf.BlobHeader{}
 
-	if err := proto.UnmarshalMerge(buffer.Bytes(), header); err != nil {
+	if err := proto.Unmarshal(buffer.Bytes(), header); err != nil {
 		return nil, err
 	}
 
@@ -70,7 +70,7 @@ func (b blobReader) readBlob(buffer *bytes.Buffer, header *protobuf.BlobHeader) 
 
 	blob := &protobuf.Blob{}
 
-	if err := proto.UnmarshalMerge(buffer.Bytes(), blob); err != nil {
+	if err := proto.Unmarshal(buffer.Bytes(), blob); err != nil {
 		return nil, err
 	}
 

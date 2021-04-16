@@ -16,6 +16,8 @@ syntax = "proto2";
 
 package protobuf;
 
+option go_package = "m4o.io/pbf/protobuf";
+
 /* OSM Binary file format
 
 This is the master schema file of the OSM binary file format. This
