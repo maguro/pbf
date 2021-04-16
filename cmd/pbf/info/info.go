@@ -132,7 +132,7 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 			case err == io.EOF:
 				break done
 			case err != nil:
-				log.Fatal(err)
+				panic(err.Error())
 			default:
 				switch v := v.(type) {
 				case *pbf.Node:
@@ -145,7 +145,7 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 					// Process Relation v.
 					rc++
 				default:
-					log.Fatalf("unknown type %T\n", v)
+					panic(fmt.Sprintf("unknown type %T\n", v))
 				}
 			}
 		}

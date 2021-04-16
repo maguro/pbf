@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 
 	parser "m4o.io/pbf"
@@ -29,7 +28,7 @@ import (
 func Example() {
 	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 
 	defer in.Close()
@@ -38,7 +37,7 @@ func Example() {
 
 	d, err := parser.NewDecoder(context.Background(), in, parser.WithProtoBufferSize(size), parser.WithNCpus(2))
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
 
 	defer d.Close()
@@ -52,7 +51,7 @@ done:
 		case err == io.EOF:
 			break done
 		case err != nil:
-			log.Fatal(err)
+			panic(err.Error())
 		default:
 			switch v := v.(type) {
 			case *parser.Node:
@@ -65,7 +64,7 @@ done:
 				// Process Relation v.
 				rc++
 			default:
-				log.Fatalf("unknown type %T\n", v)
+				panic(fmt.Sprintf("unknown type %T\n", v))
 			}
 		}
 	}
