@@ -1,7 +1,7 @@
 # pbf
 OpenStreetMap PBF golang encoder/decoder
 
-[![Build Status](https://travis-ci.org/maguro/pbf.svg?branch=master)](https://travis-ci.org/maguro/pbf) 
+[![Build Status](https://github.com/maguro/pbf/actions/workflows/ci.yml/badge.svg)](https://github.com/maguro/pbf/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/maguro/pbf)](https://goreportcard.com/report/github.com/maguro/pbf) 
 [![Documentation](https://godoc.org/github.com/maguro/pbf?status.svg)](http://godoc.org/github.com/maguro/pbf) 
 [![codecov.io](https://codecov.io/github/maguro/pbf/coverage.svg?branch=master)](https://codecov.io/github/maguro/pbf?branch=master)

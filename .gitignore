@@ -4,6 +4,10 @@
 *.so
 *.dylib
 
+# code coverage files
+coverage.out
+coverage.lcov
+
 # Test binary, build with `go test -c`
 *.test
 
