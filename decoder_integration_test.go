@@ -1,3 +1,5 @@
+// +build integration
+
 // Copyright 2017-21 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +26,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDecodeSample(t *testing.T) {
-	publicDecodeOsmPbf(t, "testdata/sample.osm.pbf", 339)
+func TestDecodeBremen(t *testing.T) {
+	publicDecodeOsmPbf(t, "testdata/bremen.osm.pbf", 1640420)
 }
 
-func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
-	in, err := os.Open(file)
+func TestDecodeLondon(t *testing.T) {
+	publicDecodeOsmPbf(t, "testdata/greater-london.osm.pbf", 3200894)
+}
+
+func TestDecoderStop(t *testing.T) {
+	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
 		t.Errorf("Error reading file: %v", err)
 	}
@@ -44,10 +50,22 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 
 	assert.Equal(t, reflect.TypeOf(Header{}), reflect.TypeOf(decoder.Header))
 
+	cancel := make(chan bool, 1)
+
+	go func() {
+		<-cancel
+		decoder.Close()
+		decoder.Close()
+	}()
+
 	// decode elements
 	var nEntries int
 
 	for {
+		if nEntries == 1000 {
+			cancel <- true
+		}
+
 		e, err := decoder.Decode()
 		if err != nil {
 			if err != io.EOF {
@@ -62,5 +80,5 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 		nEntries++
 	}
 
-	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of elements")
+	assert.True(t, nEntries < 3200894, "Close did not cancel decoding")
 }

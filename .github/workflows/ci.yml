@@ -23,6 +23,8 @@ jobs:
         uses: actions/checkout@v2
       - name: test
         run: go test -v -race -timeout 10s ./...
+      - name: integration_test
+        run: go test -v ./... --tags=integration
 
   lint:
     runs-on: ubuntu-latest
