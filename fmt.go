@@ -29,11 +29,13 @@ func stripTrailingZeros(s string) string {
 			offset--
 			break
 		}
+
 		if s[offset] != '0' {
 			break
 		}
+
 		offset--
 	}
+
 	return s[:offset+1]
 }
-
