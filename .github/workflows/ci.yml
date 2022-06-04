@@ -36,9 +36,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Linting
-        uses: golangci/golangci-lint-action@v2.5.2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.39
+          version: v1.46
 
   coverage:
     runs-on: ubuntu-latest
