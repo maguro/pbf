@@ -18,6 +18,8 @@ coverage.lcov
 .glide/
 vendor/
 
+.idea
+
 pbf
 !pbf/
 
