@@ -26,22 +26,25 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-
 	"m4o.io/pbf/protobuf"
 )
 
 const (
-	// DefaultBufferSize is the default buffer size for protobuf un-marshaling
+	bufferSize = 1024
+
+	// DefaultBufferSize is the default buffer size for protobuf un-marshaling.
 	DefaultBufferSize = 1024 * 1024
 
-	// DefaultInputChannelLength is the default channel length of raw blobs
+	// DefaultInputChannelLength is the default channel length of raw blobs.
 	DefaultInputChannelLength = 16
 
-	// DefaultOutputChannelLength is the default channel length of decoded arrays of element
+	// DefaultOutputChannelLength is the default channel length of decoded arrays of element.
 	DefaultOutputChannelLength = 8
 
-	// DefaultDecodedChannelLength is the default channel length of decoded elements coalesced from output channels
+	// DefaultDecodedChannelLength is the default channel length of decoded elements coalesced from output channels.
 	DefaultDecodedChannelLength = 8000
+
+	coordinatesPerDegree = 1e-9
 )
 
 // DefaultNCpu provides the default number of CPUs.
@@ -153,17 +156,18 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 		return nil, err
 	}
 
-	e, err := elements(h, b, bytes.NewBuffer(make([]byte, 0, 1024)))
+	e, err := elements(h, b, bytes.NewBuffer(make([]byte, 0, bufferSize)))
 	if err != nil {
 		return nil, err
 	}
 
-	if e[0].(*Header) == nil {
+	if hdr, ok := e[0].(*Header); !ok {
 		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(e[0]))
-		return nil, err
-	}
 
-	d.Header = *e[0].(*Header)
+		return nil, err
+	} else {
+		d.Header = *hdr
+	}
 
 	// create decoding pipelines
 	var outputs []chan decoded
@@ -222,12 +226,14 @@ func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan 
 				return
 			} else if err != nil {
 				input <- encoded{err: err}
+
 				return
 			}
 
 			b, err := b.readBlob(buffer, h)
 			if err != nil {
 				input <- encoded{err: err}
+
 				return
 			}
 
@@ -261,6 +267,7 @@ func decode(input <-chan encoded, cfg decoderOptions) (output chan decoded) {
 
 			if raw.err != nil {
 				output <- decoded{nil, raw.err}
+
 				return
 			}
 
@@ -298,6 +305,7 @@ func coalesce(cfg decoderOptions, outputs ...chan decoded) (pairs chan pair) {
 
 			if decoded.err != nil {
 				pairs <- pair{nil, decoded.err}
+
 				return
 			}
 
@@ -340,6 +348,7 @@ func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.B
 
 		if zlibBuf.Len() != int(blob.GetRawSize()) {
 			err = fmt.Errorf("raw blob data size %d but expected %d", zlibBuf.Len(), blob.GetRawSize())
+
 			return nil, err
 		}
 
@@ -358,6 +367,7 @@ func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.B
 			if err != nil {
 				return nil, err
 			}
+
 			return []interface{}{h}, nil
 		}
 	case "OSMData":
@@ -402,5 +412,5 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 // toDegrees converts a coordinate into Degrees, given the offset and
 // granularity of the coordinate.
 func toDegrees(offset int64, granularity int32, coordinate int64) Degrees {
-	return 1e-9 * Degrees(offset+(int64(granularity)*coordinate))
+	return coordinatesPerDegree * Degrees(offset+(int64(granularity)*coordinate))
 }

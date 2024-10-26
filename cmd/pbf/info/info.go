@@ -26,7 +26,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
-
 	"m4o.io/pbf"
 	"m4o.io/pbf/cmd/pbf/cli"
 )
@@ -66,7 +65,6 @@ var infoCmd = &cobra.Command{
 	Long:  "Print information about an OSM file",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		flags := cmd.Flags()
 
 		silent, err := flags.GetBool("silent")
