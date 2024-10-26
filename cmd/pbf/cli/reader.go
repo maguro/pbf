@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// -- *os.File Value
+// -- *os.File Value.
 type readerValue struct {
 	value    **os.File
 	typename string

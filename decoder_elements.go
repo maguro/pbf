@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-
 	"m4o.io/pbf/protobuf"
 )
 
@@ -304,5 +303,6 @@ func decodeMemberType(mt protobuf.Relation_MemberType) ElementType {
 // milliseconds, to a UTC timestamp of type Time.
 func toTimestamp(granularity int32, timestamp int32) time.Time {
 	ms := time.Duration(timestamp*granularity) * time.Millisecond
+
 	return time.Unix(0, ms.Nanoseconds()).UTC()
 }

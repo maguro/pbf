@@ -20,7 +20,6 @@ import (
 	"io"
 
 	"google.golang.org/protobuf/proto"
-
 	"m4o.io/pbf/protobuf"
 )
 
