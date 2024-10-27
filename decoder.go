@@ -143,15 +143,14 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 
 	ctx, d.cancel = context.WithCancel(ctx)
 
-	r := newBlobReader(reader)
 	buf := bytes.NewBuffer(make([]byte, 0, c.protoBufferSize))
 
-	h, err := r.readBlobHeader(buf)
+	h, err := readBlobHeader(buf, reader)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := r.readBlob(buf, h)
+	b, err := readBlob(buf, reader, h)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +170,7 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 
 	// create decoding pipelines
 	var outputs []chan decoded
-	for _, input := range read(ctx, r, c) {
+	for _, input := range read(ctx, reader, c) {
 		outputs = append(outputs, decode(input, c))
 	}
 
@@ -200,7 +199,7 @@ func (d *Decoder) Close() {
 
 // read obtains OSM blobs and sends them down, in a round-robin manner, a list
 // of channels to be decoded.
-func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan encoded) {
+func read(ctx context.Context, rdr io.Reader, cfg decoderOptions) (inputs []chan encoded) {
 	n := cfg.nCPU
 	for i := uint16(0); i < n; i++ {
 		inputs = append(inputs, make(chan encoded, cfg.inputChannelLength))
@@ -221,7 +220,7 @@ func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan 
 			input := inputs[i]
 			i = (i + 1) % n
 
-			h, err := b.readBlobHeader(buffer)
+			h, err := readBlobHeader(buffer, rdr)
 			if err == io.EOF {
 				return
 			} else if err != nil {
@@ -230,7 +229,7 @@ func read(ctx context.Context, b blobReader, cfg decoderOptions) (inputs []chan 
 				return
 			}
 
-			b, err := b.readBlob(buffer, h)
+			b, err := readBlob(buffer, rdr, h)
 			if err != nil {
 				input <- encoded{err: err}
 

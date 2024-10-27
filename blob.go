@@ -23,27 +23,19 @@ import (
 	"m4o.io/pbf/protobuf"
 )
 
-type blobReader struct {
-	r io.Reader
-}
-
-func newBlobReader(r io.Reader) blobReader {
-	return blobReader{r: r}
-}
-
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
 // The header is used when decoding blobs into OSM elements.
-func (b blobReader) readBlobHeader(buffer *bytes.Buffer) (header *protobuf.BlobHeader, err error) {
+func readBlobHeader(buffer *bytes.Buffer, rdr io.Reader) (header *protobuf.BlobHeader, err error) {
 	var size uint32
 
-	err = binary.Read(b.r, binary.BigEndian, &size)
+	err = binary.Read(rdr, binary.BigEndian, &size)
 	if err != nil {
 		return nil, err
 	}
 
 	buffer.Reset()
 
-	if _, err := io.CopyN(buffer, b.r, int64(size)); err != nil {
+	if _, err := io.CopyN(buffer, rdr, int64(size)); err != nil {
 		return nil, err
 	}
 
@@ -58,12 +50,12 @@ func (b blobReader) readBlobHeader(buffer *bytes.Buffer) (header *protobuf.BlobH
 
 // readBlob unmarshals a blob from an array of protobuf encoded bytes.  The
 // blob still needs to be decoded into OSM elements using decode().
-func (b blobReader) readBlob(buffer *bytes.Buffer, header *protobuf.BlobHeader) (*protobuf.Blob, error) {
+func readBlob(buffer *bytes.Buffer, rdr io.Reader, header *protobuf.BlobHeader) (*protobuf.Blob, error) {
 	size := header.GetDatasize()
 
 	buffer.Reset()
 
-	if _, err := io.CopyN(buffer, b.r, int64(size)); err != nil {
+	if _, err := io.CopyN(buffer, rdr, int64(size)); err != nil {
 		return nil, err
 	}
 
