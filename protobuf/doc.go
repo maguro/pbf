@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Package protobuf contains the Protobuf code parsing OSM binary files.
-package protobuf // import "m4o.io/pbf/protobuf"
+package protobuf
