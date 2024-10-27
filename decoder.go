@@ -59,12 +59,12 @@ type encoded struct {
 }
 
 type decoded struct {
-	elements []interface{}
+	elements []any
 	err      error
 }
 
 type pair struct {
-	element interface{}
+	element any
 	err     error
 }
 
@@ -184,7 +184,7 @@ func NewDecoder(ctx context.Context, reader io.Reader, opts ...DecoderOption) (*
 // or Relation struct representing the underlying OpenStreetMap PBF data, or
 // error encountered. The end of the input stream is reported by an io.EOF
 // error.
-func (d *Decoder) Decode() (interface{}, error) {
+func (d *Decoder) Decode() (any, error) {
 	decoded, more := <-d.pairs
 	if !more {
 		return nil, io.EOF
@@ -321,7 +321,7 @@ func coalesce(cfg decoderOptions, outputs ...chan decoded) (pairs chan pair) {
 // elements unmarshals an array of OSM elements from an array of protobuf encoded
 // bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
 // decompression.
-func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]interface{}, error) {
+func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]any, error) {
 	var buf []byte
 
 	switch {
@@ -368,7 +368,7 @@ func elements(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.B
 				return nil, err
 			}
 
-			return []interface{}{h}, nil
+			return []any{h}, nil
 		}
 	case "OSMData":
 		return parsePrimitiveBlock(buf)

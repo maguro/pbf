@@ -21,7 +21,7 @@ import (
 	"m4o.io/pbf/protobuf"
 )
 
-func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
+func parsePrimitiveBlock(buffer []byte) ([]any, error) {
 	pb := &protobuf.PrimitiveBlock{}
 	if err := proto.Unmarshal(buffer, pb); err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 
 	c := newBlockContext(pb)
 
-	elements := make([]interface{}, 0)
+	elements := make([]any, 0)
 	for _, pg := range pb.GetPrimitivegroup() {
 		elements = append(elements, c.decodeNodes(pg.GetNodes())...)
 		elements = append(elements, c.decodeDenseNodes(pg.GetDense())...)
@@ -40,8 +40,8 @@ func parsePrimitiveBlock(buffer []byte) ([]interface{}, error) {
 	return elements, nil
 }
 
-func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface{}) {
-	elements = make([]interface{}, len(nodes))
+func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []any) {
+	elements = make([]any, len(nodes))
 
 	for i, node := range nodes {
 		elements[i] = &Node{
@@ -56,9 +56,9 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []interface
 	return elements
 }
 
-func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{} {
+func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []any {
 	ids := nodes.GetId()
-	elements := make([]interface{}, len(ids))
+	elements := make([]any, len(ids))
 
 	tic := c.newTagsContext(nodes.GetKeysVals())
 	dic := c.newDenseInfoContext(nodes.GetDenseinfo())
@@ -83,8 +83,8 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []interface{
 	return elements
 }
 
-func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
-	elements := make([]interface{}, len(nodes))
+func (c *blockContext) decodeWays(nodes []*protobuf.Way) []any {
+	elements := make([]any, len(nodes))
 
 	for i, node := range nodes {
 		refs := node.GetRefs()
@@ -108,8 +108,8 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []interface{} {
 	return elements
 }
 
-func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []interface{} {
-	elements := make([]interface{}, len(nodes))
+func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []any {
+	elements := make([]any, len(nodes))
 
 	for i, node := range nodes {
 		elements[i] = &Relation{

@@ -158,7 +158,7 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 
 func renderJSON(info *extendedHeader, extended bool) {
 	// marshall the smallest struct needed
-	var v interface{}
+	var v any
 	if extended {
 		v = info
 	} else {
