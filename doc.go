@@ -13,4 +13,4 @@
 // limitations under the License.
 
 // Package pbf contains code for parsing OSM binary files.
-package pbf // import "m4o.io/pbf"
+package pbf
