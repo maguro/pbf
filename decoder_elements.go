@@ -18,10 +18,11 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+
 	"m4o.io/pbf/protobuf"
 )
 
-func parsePrimitiveBlock(buffer []byte) ([]any, error) {
+func parsePrimitiveBlock(buffer []byte) ([]Object, error) {
 	pb := &protobuf.PrimitiveBlock{}
 	if err := proto.Unmarshal(buffer, pb); err != nil {
 		return nil, err
@@ -29,7 +30,7 @@ func parsePrimitiveBlock(buffer []byte) ([]any, error) {
 
 	c := newBlockContext(pb)
 
-	elements := make([]any, 0)
+	elements := make([]Object, 0)
 	for _, pg := range pb.GetPrimitivegroup() {
 		elements = append(elements, c.decodeNodes(pg.GetNodes())...)
 		elements = append(elements, c.decodeDenseNodes(pg.GetDense())...)
@@ -40,8 +41,8 @@ func parsePrimitiveBlock(buffer []byte) ([]any, error) {
 	return elements, nil
 }
 
-func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []any) {
-	elements = make([]any, len(nodes))
+func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []Object) {
+	elements = make([]Object, len(nodes))
 
 	for i, node := range nodes {
 		elements[i] = &Node{
@@ -56,9 +57,9 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []any) {
 	return elements
 }
 
-func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []any {
+func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []Object {
 	ids := nodes.GetId()
-	elements := make([]any, len(ids))
+	elements := make([]Object, len(ids))
 
 	tic := c.newTagsContext(nodes.GetKeysVals())
 	dic := c.newDenseInfoContext(nodes.GetDenseinfo())
@@ -83,8 +84,8 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []any {
 	return elements
 }
 
-func (c *blockContext) decodeWays(nodes []*protobuf.Way) []any {
-	elements := make([]any, len(nodes))
+func (c *blockContext) decodeWays(nodes []*protobuf.Way) []Object {
+	elements := make([]Object, len(nodes))
 
 	for i, node := range nodes {
 		refs := node.GetRefs()
@@ -108,8 +109,8 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []any {
 	return elements
 }
 
-func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []any {
-	elements := make([]any, len(nodes))
+func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []Object {
+	elements := make([]Object, len(nodes))
 
 	for i, node := range nodes {
 		elements[i] = &Relation{

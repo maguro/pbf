@@ -16,12 +16,90 @@ package pbf
 
 import (
 	"bytes"
+	"compress/zlib"
+	"context"
 	"encoding/binary"
+	"errors"
+	"fmt"
 	"io"
+	"log/slog"
+	"time"
 
+	"github.com/destel/rill"
 	"google.golang.org/protobuf/proto"
+
 	"m4o.io/pbf/protobuf"
 )
+
+type blob struct {
+	header *protobuf.BlobHeader
+	blob   *protobuf.Blob
+}
+
+func generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, err error) bool) {
+	return func(yield func(enc blob, err error) bool) {
+		buffer := bytes.NewBuffer(make([]byte, 0, DefaultBufferSize))
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			h, err := readBlobHeader(buffer, reader)
+			if err != nil {
+				if err != io.EOF {
+					slog.Error(err.Error())
+					yield(blob{}, err)
+				}
+
+				return
+			}
+
+			b, err := readBlob(buffer, reader, h)
+			if err != nil {
+				slog.Error(err.Error())
+				yield(blob{}, err)
+
+				return
+			}
+
+			if !yield(blob{header: h, blob: b}, nil) {
+				return
+			}
+
+			buffer.Reset()
+		}
+	}
+}
+
+func decode(array []blob) (out <-chan rill.Try[[]Object]) {
+	ch := make(chan rill.Try[[]Object])
+	out = ch
+
+	go func() {
+		defer close(ch)
+
+		buf := bytes.NewBuffer(make([]byte, 0, DefaultBufferSize))
+
+		for _, enc := range array {
+			elements, err := extract(enc.header, enc.blob, buf)
+			if err != nil {
+				slog.Error(err.Error())
+				ch <- rill.Try[[]Object]{Error: err}
+
+				return
+			}
+
+			ch <- rill.Try[[]Object]{Value: elements}
+
+			buf.Reset()
+		}
+	}()
+
+	return
+}
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
 // The header is used when decoding blobs into OSM elements.
@@ -66,4 +144,101 @@ func readBlob(buffer *bytes.Buffer, rdr io.Reader, header *protobuf.BlobHeader) 
 	}
 
 	return blob, nil
+}
+
+// elements unmarshals an array of OSM elements from an array of protobuf encoded
+// bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
+// decompression.
+func extract(header *protobuf.BlobHeader, blob *protobuf.Blob, zlibBuf *bytes.Buffer) ([]Object, error) {
+	var buf []byte
+
+	switch {
+	case blob.Raw != nil:
+		buf = blob.GetRaw()
+
+	case blob.ZlibData != nil:
+		r, err := zlib.NewReader(bytes.NewReader(blob.GetZlibData()))
+		if err != nil {
+			return nil, err
+		}
+
+		zlibBuf.Reset()
+
+		rawBufferSize := int(blob.GetRawSize() + bytes.MinRead)
+		if rawBufferSize > zlibBuf.Cap() {
+			zlibBuf.Grow(rawBufferSize)
+		}
+
+		_, err = zlibBuf.ReadFrom(r)
+		if err != nil {
+			return nil, err
+		}
+
+		if zlibBuf.Len() != int(blob.GetRawSize()) {
+			err = fmt.Errorf("raw blob data size %d but expected %d", zlibBuf.Len(), blob.GetRawSize())
+
+			return nil, err
+		}
+
+		buf = zlibBuf.Bytes()
+
+	default:
+		return nil, errors.New("unknown blob data type")
+	}
+
+	ht := *header.Type
+
+	switch ht {
+	case "OSMHeader":
+		{
+			h, err := parseOSMHeader(buf)
+			if err != nil {
+				return nil, err
+			}
+
+			return []Object{h}, nil
+		}
+	case "OSMData":
+		return parsePrimitiveBlock(buf)
+	default:
+		return nil, fmt.Errorf("unknown header type %s", ht)
+	}
+}
+
+// parseOSMHeader unmarshals the OSM header from an array of protobuf encoded bytes.
+func parseOSMHeader(buffer []byte) (*Header, error) {
+	hb := &protobuf.HeaderBlock{}
+	if err := proto.Unmarshal(buffer, hb); err != nil {
+		return nil, err
+	}
+
+	header := &Header{
+		RequiredFeatures:                 hb.GetRequiredFeatures(),
+		OptionalFeatures:                 hb.GetOptionalFeatures(),
+		WritingProgram:                   hb.GetWritingprogram(),
+		Source:                           hb.GetSource(),
+		OsmosisReplicationBaseURL:        hb.GetOsmosisReplicationBaseUrl(),
+		OsmosisReplicationSequenceNumber: hb.GetOsmosisReplicationSequenceNumber(),
+	}
+
+	if hb.Bbox != nil {
+		header.BoundingBox = BoundingBox{
+			Left:   toDegrees(0, 1, hb.Bbox.GetLeft()),
+			Right:  toDegrees(0, 1, hb.Bbox.GetRight()),
+			Top:    toDegrees(0, 1, hb.Bbox.GetTop()),
+			Bottom: toDegrees(0, 1, hb.Bbox.GetBottom()),
+		}
+	}
+
+	if hb.OsmosisReplicationTimestamp != nil {
+		header.OsmosisReplicationTimestamp = time.Unix(*hb.OsmosisReplicationTimestamp, 0)
+	}
+
+	return header, nil
+}
+
+// toDegrees converts a coordinate into Degrees, given the offset and
+// granularity of the coordinate.
+func toDegrees(offset int64, granularity int32, coordinate int64) Degrees {
+	return coordinatesPerDegree * Degrees(offset+(int64(granularity)*coordinate))
 }

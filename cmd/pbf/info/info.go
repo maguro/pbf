@@ -26,6 +26,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
+
 	"m4o.io/pbf"
 	"m4o.io/pbf/cmd/pbf/cli"
 )
@@ -51,10 +52,7 @@ func init() { //nolint:gochecknoinits
 	flags.BoolP("extended", "e", false, "provide extended information (scans entire file)")
 	flags.BoolP("json", "j", false, "format information in JSON")
 	flags.Uint32P("buffer-length", "b", pbf.DefaultBufferSize, "buffer size for protobuf un-marshaling")
-	flags.Uint32P("raw-length", "r", pbf.DefaultInputChannelLength, "channel length of raw blobs")
-	flags.Uint16P("output-length", "o", pbf.DefaultOutputChannelLength, "channel length of decoded arrays of element")
-	flags.Uint16P("decoded-length", "d", pbf.DefaultDecodedChannelLength,
-		"channel length of decoded elements coalesced from output channels")
+	flags.Uint32P("unprocessed-batch-size", "u", pbf.DefaultBatchSize, "batch size for unprocessed blobs")
 	flags.Uint16P("cpu", "c", pbf.DefaultNCpu(), "number of CPUs to use for scanning")
 	flags.BoolP("silent", "s", false, "silence progress bar")
 }
@@ -81,18 +79,28 @@ var infoCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 		}
+		extended, err := flags.GetBool("extended")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var opts []pbf.DecoderOption
 
 		ncpu, err := flags.GetUint16("cpu")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		extended, err := flags.GetBool("extended")
+		opts = append(opts, pbf.WithNCpus(ncpu))
+
+		batchSize, err := flags.GetUint32("unprocessed-batch-size")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		info := runInfo(win, ncpu, extended)
+		opts = append(opts, pbf.WithProtoBatchSize(int(batchSize)))
+
+		info := runInfo(win, extended, opts...)
 
 		err = win.Close()
 		if err != nil {
@@ -111,11 +119,14 @@ var infoCmd = &cobra.Command{
 	},
 }
 
-func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
-	d, err := pbf.NewDecoder(context.Background(), in, pbf.WithNCpus(ncpu))
+func runInfo(in io.Reader, extended bool, opts ...pbf.DecoderOption) *extendedHeader {
+	ctx := context.Background()
+
+	d, err := pbf.NewDecoder(ctx, in, opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer d.Close()
 
 	info := &extendedHeader{Header: d.Header}
@@ -125,25 +136,27 @@ func runInfo(in io.Reader, ncpu uint16, extended bool) *extendedHeader {
 	if extended {
 	done:
 		for {
-			v, err := d.Decode()
+			objs, err := d.Decode()
 			switch {
 			case err == io.EOF:
 				break done
 			case err != nil:
 				panic(err.Error())
 			default:
-				switch v := v.(type) {
-				case *pbf.Node:
-					// Process Node v.
-					nc++
-				case *pbf.Way:
-					// Process Way v.
-					wc++
-				case *pbf.Relation:
-					// Process Relation v.
-					rc++
-				default:
-					panic(fmt.Sprintf("unknown type %T\n", v))
+				for _, obj := range objs {
+					switch t := obj.(type) {
+					case *pbf.Node:
+						// Process Node obj.
+						nc++
+					case *pbf.Way:
+						// Process Way obj.
+						wc++
+					case *pbf.Relation:
+						// Process Relation obj.
+						rc++
+					default:
+						panic(fmt.Sprintf("unknown type %T\n", t))
+					}
 				}
 			}
 		}

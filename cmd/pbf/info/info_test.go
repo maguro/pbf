@@ -36,7 +36,7 @@ func testRunInfoWith(t *testing.T, extended bool, node int64, way int64, relatio
 		t.Fatalf("Unable to read data file %v", err)
 	}
 
-	info := runInfo(f, 2, extended)
+	info := runInfo(f, extended)
 	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 

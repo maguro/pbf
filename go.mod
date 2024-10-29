@@ -5,6 +5,7 @@ go 1.23
 toolchain go1.23.2
 
 require (
+	github.com/destel/rill v0.5.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/spf13/cobra v1.8.1

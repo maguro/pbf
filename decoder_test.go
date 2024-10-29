@@ -48,7 +48,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	var nEntries int
 
 	for {
-		e, err := decoder.Decode()
+		objs, err := decoder.Decode()
 		if err != nil {
 			if err != io.EOF {
 				t.Errorf("Error decoding%v", err)
@@ -57,9 +57,11 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 			}
 		}
 
-		assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(e))
+		for _, obj := range objs {
+			assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(obj))
+		}
 
-		nEntries++
+		nEntries = nEntries + len(objs)
 	}
 
 	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of elements")

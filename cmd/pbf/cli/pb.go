@@ -19,7 +19,7 @@ import (
 	"io"
 	"os"
 
-	pb "gopkg.in/cheggaaa/pb.v1"
+	"gopkg.in/cheggaaa/pb.v1"
 )
 
 // progressBar is an instance of ReadCloser with an associated ProgressBar.

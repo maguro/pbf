@@ -145,6 +145,8 @@ type Header struct {
 	OsmosisReplicationBaseURL        string
 }
 
+func (r Header) foo() {}
+
 // Info represents information common to Node, Way, and Relation elements.
 type Info struct {
 	Version   int32
@@ -153,6 +155,10 @@ type Info struct {
 	Changeset int64
 	User      string
 	Visible   bool
+}
+
+type Object interface {
+	foo()
 }
 
 // Node represents a specific point on the earth's surface defined by its
@@ -166,6 +172,8 @@ type Node struct {
 	Lon  Degrees
 }
 
+func (r Node) foo() {}
+
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
 type Way struct {
 	ID      uint64
@@ -173,6 +181,8 @@ type Way struct {
 	Info    *Info
 	NodeIDs []uint64
 }
+
+func (r Way) foo() {}
 
 // ElementType is an enumeration of relation types.
 type ElementType int
@@ -203,3 +213,5 @@ type Relation struct {
 	Info    *Info
 	Members []Member
 }
+
+func (r Relation) foo() {}
