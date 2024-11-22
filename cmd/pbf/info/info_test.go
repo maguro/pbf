@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"m4o.io/pbf"
+	"m4o.io/pbf/v2"
 )
 
 func TestRunInfo(t *testing.T) {

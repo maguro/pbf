@@ -1,4 +1,4 @@
-module m4o.io/pbf
+module m4o.io/pbf/v2
 
 go 1.23
 

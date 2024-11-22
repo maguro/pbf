@@ -28,8 +28,8 @@ import (
 	"github.com/destel/rill"
 	"google.golang.org/protobuf/proto"
 
-	"m4o.io/pbf/internal/core"
-	"m4o.io/pbf/protobuf"
+	"m4o.io/pbf/v2/internal/core"
+	"m4o.io/pbf/v2/protobuf"
 )
 
 type blob struct {

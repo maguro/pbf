@@ -23,7 +23,7 @@ import (
 	"io"
 	"os"
 
-	parser "m4o.io/pbf"
+	parser "m4o.io/pbf/v2"
 )
 
 func Example() {

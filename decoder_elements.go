@@ -19,7 +19,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"m4o.io/pbf/protobuf"
+	"m4o.io/pbf/v2/protobuf"
 )
 
 func parsePrimitiveBlock(buffer []byte) ([]Object, error) {

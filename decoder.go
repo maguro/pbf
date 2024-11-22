@@ -24,7 +24,7 @@ import (
 
 	"github.com/destel/rill"
 
-	"m4o.io/pbf/internal/core"
+	"m4o.io/pbf/v2/internal/core"
 )
 
 const (
