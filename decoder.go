@@ -15,19 +15,19 @@
 package pbf
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"reflect"
 	"runtime"
+	"time"
 
 	"github.com/destel/rill"
+
+	"m4o.io/pbf/internal/core"
 )
 
 const (
-	bufferSize = 1024
-
 	// DefaultBufferSize is the default buffer size for protobuf un-marshaling.
 	DefaultBufferSize = 1024 * 1024
 
@@ -106,7 +106,7 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 
 	blobs := rill.FromSeq2(generate(ctx, rdr))
 
-	batches := rill.Batch(blobs, cfg.protoBatchSize, -1)
+	batches := rill.Batch(blobs, cfg.protoBatchSize, time.Second)
 
 	objects := rill.FlatMap(batches, int(cfg.nCPU), decode)
 
@@ -136,7 +136,8 @@ func (d *Decoder) Close() {
 }
 
 func (d *Decoder) loadHeader(reader io.Reader) error {
-	buf := bytes.NewBuffer(make([]byte, 0, DefaultBufferSize))
+	buf := core.NewPooledBuffer()
+	defer buf.Close()
 
 	h, err := readBlobHeader(buf, reader)
 	if err != nil {
@@ -148,7 +149,7 @@ func (d *Decoder) loadHeader(reader io.Reader) error {
 		return err
 	}
 
-	e, err := extract(h, b, bytes.NewBuffer(make([]byte, 0, bufferSize)))
+	e, err := extract(h, b)
 	if err != nil {
 		return err
 	}
