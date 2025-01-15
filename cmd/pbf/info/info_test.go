@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"m4o.io/pbf/v2"
+	"m4o.io/pbf/v2/model"
 )
 
 func TestRunInfo(t *testing.T) {
@@ -37,10 +37,10 @@ func testRunInfoWith(t *testing.T, extended bool, node int64, way int64, relatio
 	}
 
 	info := runInfo(f, extended)
-	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := model.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
 
-	assert.True(t, info.BoundingBox.EqualWithin(bbox, pbf.E6))
+	assert.True(t, info.BoundingBox.EqualWithin(bbox, model.E6))
 	assert.Equal(t, info.RequiredFeatures, []string{"OsmSchema-V0.6", "DenseNodes"})
 	assert.Equal(t, info.OptionalFeatures, []string(nil))
 	assert.Equal(t, info.WritingProgram, "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)")
@@ -53,9 +53,9 @@ func testRunInfoWith(t *testing.T, extended bool, node int64, way int64, relatio
 	assert.Equal(t, info.RelationCount, relation)
 }
 func TestRenderJSON(t *testing.T) {
-	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := model.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
-	h := pbf.Header{
+	h := model.Header{
 		BoundingBox:                      bbox,
 		RequiredFeatures:                 []string{"OsmSchema-V0.6", "DenseNodes"},
 		OptionalFeatures:                 []string(nil),
@@ -89,7 +89,7 @@ func TestRenderJSON(t *testing.T) {
 		t.Fatalf("Unable to unmarshal json %v", err)
 	}
 
-	assert.True(t, info.BoundingBox.EqualWithin(bbox, pbf.E6))
+	assert.True(t, info.BoundingBox.EqualWithin(bbox, model.E6))
 	assert.Equal(t, info.RequiredFeatures, []string{"OsmSchema-V0.6", "DenseNodes"})
 	assert.Equal(t, info.OptionalFeatures, []string(nil))
 	assert.Equal(t, info.WritingProgram, "Osmium (http://wiki.openstreetmap.org/wiki/Osmium)")
@@ -103,9 +103,9 @@ func TestRenderJSON(t *testing.T) {
 }
 
 func TestRenderText(t *testing.T) {
-	bbox := pbf.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := model.BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
 	ts, _ := time.Parse(time.RFC3339, "2014-03-24T21:55:02Z")
-	h := pbf.Header{
+	h := model.Header{
 		BoundingBox:                      bbox,
 		RequiredFeatures:                 []string{"OsmSchema-V0.6", "DenseNodes"},
 		OptionalFeatures:                 []string{"Pbf"},

@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+package decoder
 
 import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
 
+	"m4o.io/pbf/v2/model"
 	"m4o.io/pbf/v2/protobuf"
 )
 
-func parsePrimitiveBlock(buffer []byte) ([]Object, error) {
+func parsePrimitiveBlock(buffer []byte) ([]model.Object, error) {
 	pb := &protobuf.PrimitiveBlock{}
 	if err := proto.Unmarshal(buffer, pb); err != nil {
 		return nil, err
@@ -30,7 +31,7 @@ func parsePrimitiveBlock(buffer []byte) ([]Object, error) {
 
 	c := newBlockContext(pb)
 
-	elements := make([]Object, 0)
+	elements := make([]model.Object, 0)
 	for _, pg := range pb.GetPrimitivegroup() {
 		elements = append(elements, c.decodeNodes(pg.GetNodes())...)
 		elements = append(elements, c.decodeDenseNodes(pg.GetDense())...)
@@ -41,12 +42,12 @@ func parsePrimitiveBlock(buffer []byte) ([]Object, error) {
 	return elements, nil
 }
 
-func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []Object) {
-	elements = make([]Object, len(nodes))
+func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []model.Object) {
+	elements = make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
-		elements[i] = &Node{
-			ID:   ID(node.GetId()),
+		elements[i] = &model.Node{
+			ID:   model.ID(node.GetId()),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
 			Lat:  toDegrees(c.latOffset, c.granularity, node.GetLat()),
@@ -57,9 +58,9 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []Object) {
 	return elements
 }
 
-func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []Object {
+func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []model.Object {
 	ids := nodes.GetId()
-	elements := make([]Object, len(ids))
+	elements := make([]model.Object, len(ids))
 
 	tic := c.newTagsContext(nodes.GetKeysVals())
 	dic := c.newDenseInfoContext(nodes.GetDenseinfo())
@@ -72,8 +73,8 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []Object {
 		lat = lats[i] + lat
 		lon = lons[i] + lon
 
-		elements[i] = &Node{
-			ID:   ID(id),
+		elements[i] = &model.Node{
+			ID:   model.ID(id),
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
 			Lat:  toDegrees(c.latOffset, c.granularity, lat),
@@ -84,22 +85,22 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []Object {
 	return elements
 }
 
-func (c *blockContext) decodeWays(nodes []*protobuf.Way) []Object {
-	elements := make([]Object, len(nodes))
+func (c *blockContext) decodeWays(nodes []*protobuf.Way) []model.Object {
+	elements := make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
 		refs := node.GetRefs()
-		nodeIDs := make([]ID, len(refs))
+		nodeIDs := make([]model.ID, len(refs))
 
 		var nodeID int64
 
 		for j, delta := range refs {
 			nodeID = delta + nodeID
-			nodeIDs[j] = ID(nodeID)
+			nodeIDs[j] = model.ID(nodeID)
 		}
 
-		elements[i] = &Way{
-			ID:      ID(node.GetId()),
+		elements[i] = &model.Way{
+			ID:      model.ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			NodeIDs: nodeIDs,
 			Info:    c.decodeInfo(node.GetInfo()),
@@ -109,12 +110,12 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []Object {
 	return elements
 }
 
-func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []Object {
-	elements := make([]Object, len(nodes))
+func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []model.Object {
+	elements := make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
-		elements[i] = &Relation{
-			ID:      ID(node.GetId()),
+		elements[i] = &model.Relation{
+			ID:      model.ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info:    c.decodeInfo(node.GetInfo()),
 			Members: c.decodeMembers(node),
@@ -124,18 +125,18 @@ func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []Object {
 	return elements
 }
 
-func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
+func (c *blockContext) decodeMembers(node *protobuf.Relation) []model.Member {
 	memids := node.GetMemids()
 	memtypes := node.GetTypes()
 	memroles := node.GetRolesSid()
-	members := make([]Member, len(memids))
+	members := make([]model.Member, len(memids))
 
 	var memid int64
 
 	for i := range memids {
 		memid = memids[i] + memid
-		members[i] = Member{
-			ID:   ID(memid),
+		members[i] = model.Member{
+			ID:   model.ID(memid),
 			Type: decodeMemberType(memtypes[i]),
 			Role: c.strings[memroles[i]],
 		}
@@ -154,13 +155,13 @@ func (c *blockContext) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	return tags
 }
 
-func (c *blockContext) decodeInfo(info *protobuf.Info) *Info {
-	i := &Info{Visible: true}
+func (c *blockContext) decodeInfo(info *protobuf.Info) *model.Info {
+	i := &model.Info{Visible: true}
 	if info != nil {
 		i.Version = info.GetVersion()
 		i.Timestamp = toTimestamp(c.dateGranularity, info.GetTimestamp())
 		i.Changeset = info.GetChangeset()
-		i.UID = UID(info.GetUid())
+		i.UID = model.UID(info.GetUid())
 
 		i.User = c.strings[info.GetUserSid()]
 
@@ -194,13 +195,13 @@ type denseInfoContext struct {
 	version   int32
 	timestamp int64
 	changeset int64
-	uid       UID
+	uid       model.UID
 	userSid   int32
 
 	dateGranularity int32
 	strings         []string
 	versions        []int32
-	uids            []UID
+	uids            []model.UID
 	timestamps      []int64
 	changesets      []int64
 	userSids        []int32
@@ -208,9 +209,9 @@ type denseInfoContext struct {
 }
 
 func (c *blockContext) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
-	uids := make([]UID, len(di.GetUid()))
+	uids := make([]model.UID, len(di.GetUid()))
 	for i, uid := range di.GetUid() {
-		uids[i] = UID(uid)
+		uids[i] = model.UID(uid)
 	}
 
 	dic := &denseInfoContext{
@@ -233,14 +234,14 @@ func (c *blockContext) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoCon
 	return dic
 }
 
-func (dic *denseInfoContext) decodeInfo(i int) *Info {
+func (dic *denseInfoContext) decodeInfo(i int) *model.Info {
 	dic.version = dic.versions[i] + dic.version
 	dic.uid = dic.uids[i] + dic.uid
 	dic.timestamp = dic.timestamps[i] + dic.timestamp
 	dic.changeset = dic.changesets[i] + dic.changeset
 	dic.userSid = dic.userSids[i] + dic.userSid
 
-	info := &Info{
+	info := &model.Info{
 		Version:   dic.version,
 		UID:       dic.uid,
 		Timestamp: toTimestamp(dic.dateGranularity, int32(dic.timestamp)),
@@ -292,14 +293,14 @@ func (tic *tagsContext) decodeTags() map[string]string {
 }
 
 // decodeMemberType converts protobuf enum Relation_MemberType to a ElementType.
-func decodeMemberType(mt protobuf.Relation_MemberType) ElementType {
+func decodeMemberType(mt protobuf.Relation_MemberType) model.ElementType {
 	switch mt {
 	case protobuf.Relation_NODE:
-		return NODE
+		return model.NODE
 	case protobuf.Relation_WAY:
-		return WAY
+		return model.WAY
 	case protobuf.Relation_RELATION:
-		return RELATION
+		return model.RELATION
 	default:
 		panic("unrecognized member type")
 	}

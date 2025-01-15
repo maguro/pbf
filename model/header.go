@@ -12,31 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+package model
 
-import "strconv"
+import (
+	"time"
+)
 
-// ftoa converts a float to a string with no trailing zeros.
-// Snagged from github.com/dustin/go-humanize to minimize library dependencies.
-func ftoa(num float64) string {
-	return stripTrailingZeros(strconv.FormatFloat(num, 'f', 6, 64))
+// Header is the contents of the OpenStreetMap PBF data file.
+type Header struct {
+	BoundingBox                      BoundingBox
+	RequiredFeatures                 []string
+	OptionalFeatures                 []string
+	WritingProgram                   string
+	Source                           string
+	OsmosisReplicationTimestamp      time.Time
+	OsmosisReplicationSequenceNumber int64
+	OsmosisReplicationBaseURL        string
 }
 
-func stripTrailingZeros(s string) string {
-	offset := len(s) - 1
-	for offset > 0 {
-		if s[offset] == '.' {
-			offset--
-
-			break
-		}
-
-		if s[offset] != '0' {
-			break
-		}
-
-		offset--
-	}
-
-	return s[:offset+1]
-}
+func (r Header) foo() {}

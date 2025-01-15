@@ -24,6 +24,7 @@ import (
 	"os"
 
 	parser "m4o.io/pbf/v2"
+	"m4o.io/pbf/v2/model"
 )
 
 func Example() {
@@ -55,13 +56,13 @@ done:
 			panic(err.Error())
 		default:
 			switch v := v.(type) {
-			case *parser.Node:
+			case *model.Node:
 				// Process Node v.
 				nc++
-			case *parser.Way:
+			case *model.Way:
 				// Process Way v.
 				wc++
-			case *parser.Relation:
+			case *model.Relation:
 				// Process Relation v.
 				rc++
 			default:

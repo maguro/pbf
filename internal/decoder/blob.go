@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+package decoder
 
 import (
 	"bytes"
@@ -29,7 +29,12 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/v2/internal/core"
+	"m4o.io/pbf/v2/model"
 	"m4o.io/pbf/v2/protobuf"
+)
+
+const (
+	coordinatesPerDegree = 1e-9
 )
 
 type blob struct {
@@ -37,7 +42,7 @@ type blob struct {
 	blob   *protobuf.Blob
 }
 
-func generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, err error) bool) {
+func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, err error) bool) {
 	return func(yield func(enc blob, err error) bool) {
 		buffer := core.NewPooledBuffer()
 		defer buffer.Close()
@@ -76,8 +81,8 @@ func generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, e
 	}
 }
 
-func decode(array []blob) (out <-chan rill.Try[[]Object]) {
-	ch := make(chan rill.Try[[]Object])
+func Decode(array []blob) (out <-chan rill.Try[[]model.Object]) {
+	ch := make(chan rill.Try[[]model.Object])
 	out = ch
 
 	go func() {
@@ -87,12 +92,12 @@ func decode(array []blob) (out <-chan rill.Try[[]Object]) {
 			elements, err := extract(enc.header, enc.blob)
 			if err != nil {
 				slog.Error(err.Error())
-				ch <- rill.Try[[]Object]{Error: err}
+				ch <- rill.Try[[]model.Object]{Error: err}
 
 				return
 			}
 
-			ch <- rill.Try[[]Object]{Value: elements}
+			ch <- rill.Try[[]model.Object]{Value: elements}
 		}
 	}()
 
@@ -147,7 +152,7 @@ func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *protobuf.BlobHea
 // elements unmarshals an array of OSM elements from an array of protobuf encoded
 // bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
 // decompression.
-func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]Object, error) {
+func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]model.Object, error) {
 	var buf []byte
 
 	switch {
@@ -197,7 +202,7 @@ func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]Object, error)
 				return nil, err
 			}
 
-			return []Object{h}, nil
+			return []model.Object{h}, nil
 		}
 	case "OSMData":
 		return parsePrimitiveBlock(buf)
@@ -207,13 +212,13 @@ func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]Object, error)
 }
 
 // parseOSMHeader unmarshals the OSM header from an array of protobuf encoded bytes.
-func parseOSMHeader(buffer []byte) (*Header, error) {
+func parseOSMHeader(buffer []byte) (*model.Header, error) {
 	hb := &protobuf.HeaderBlock{}
 	if err := proto.Unmarshal(buffer, hb); err != nil {
 		return nil, err
 	}
 
-	header := &Header{
+	header := &model.Header{
 		RequiredFeatures:                 hb.GetRequiredFeatures(),
 		OptionalFeatures:                 hb.GetOptionalFeatures(),
 		WritingProgram:                   hb.GetWritingprogram(),
@@ -223,7 +228,7 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 	}
 
 	if hb.Bbox != nil {
-		header.BoundingBox = BoundingBox{
+		header.BoundingBox = model.BoundingBox{
 			Left:   toDegrees(0, 1, hb.Bbox.GetLeft()),
 			Right:  toDegrees(0, 1, hb.Bbox.GetRight()),
 			Top:    toDegrees(0, 1, hb.Bbox.GetTop()),
@@ -240,6 +245,6 @@ func parseOSMHeader(buffer []byte) (*Header, error) {
 
 // toDegrees converts a coordinate into Degrees, given the offset and
 // granularity of the coordinate.
-func toDegrees(offset int64, granularity int32, coordinate int64) Degrees {
-	return coordinatesPerDegree * Degrees(offset+(int64(granularity)*coordinate))
+func toDegrees(offset int64, granularity int32, coordinate int64) model.Degrees {
+	return coordinatesPerDegree * model.Degrees(offset+(int64(granularity)*coordinate))
 }

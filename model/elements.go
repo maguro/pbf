@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+// Package model contains the shared model for OpenStreetMap PBF encoders/decoders.
+package model
 
 //go:generate stringer -type=ElementType
 
@@ -132,20 +133,6 @@ func (b BoundingBox) String() string {
 		ftoa(float64(b.Left)), ftoa(float64(b.Bottom)),
 		ftoa(float64(b.Right)), ftoa(float64(b.Top)))
 }
-
-// Header is the contents of the OpenStreetMap PBF data file.
-type Header struct {
-	BoundingBox                      BoundingBox
-	RequiredFeatures                 []string
-	OptionalFeatures                 []string
-	WritingProgram                   string
-	Source                           string
-	OsmosisReplicationTimestamp      time.Time
-	OsmosisReplicationSequenceNumber int64
-	OsmosisReplicationBaseURL        string
-}
-
-func (r Header) foo() {}
 
 // UID is the primary key for a user.
 type UID int32
