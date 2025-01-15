@@ -46,7 +46,7 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []Object) {
 
 	for i, node := range nodes {
 		elements[i] = &Node{
-			ID:   uint64(node.GetId()),
+			ID:   ID(node.GetId()),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
 			Lat:  toDegrees(c.latOffset, c.granularity, node.GetLat()),
@@ -73,7 +73,7 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []Object {
 		lon = lons[i] + lon
 
 		elements[i] = &Node{
-			ID:   uint64(id),
+			ID:   ID(id),
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
 			Lat:  toDegrees(c.latOffset, c.granularity, lat),
@@ -89,17 +89,17 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []Object {
 
 	for i, node := range nodes {
 		refs := node.GetRefs()
-		nodeIDs := make([]uint64, len(refs))
+		nodeIDs := make([]ID, len(refs))
 
 		var nodeID int64
 
 		for j, delta := range refs {
 			nodeID = delta + nodeID
-			nodeIDs[j] = uint64(nodeID)
+			nodeIDs[j] = ID(nodeID)
 		}
 
 		elements[i] = &Way{
-			ID:      uint64(node.GetId()),
+			ID:      ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			NodeIDs: nodeIDs,
 			Info:    c.decodeInfo(node.GetInfo()),
@@ -114,7 +114,7 @@ func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []Object {
 
 	for i, node := range nodes {
 		elements[i] = &Relation{
-			ID:      uint64(node.GetId()),
+			ID:      ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info:    c.decodeInfo(node.GetInfo()),
 			Members: c.decodeMembers(node),
@@ -135,7 +135,7 @@ func (c *blockContext) decodeMembers(node *protobuf.Relation) []Member {
 	for i := range memids {
 		memid = memids[i] + memid
 		members[i] = Member{
-			ID:   uint64(memid),
+			ID:   ID(memid),
 			Type: decodeMemberType(memtypes[i]),
 			Role: c.strings[memroles[i]],
 		}
@@ -160,7 +160,7 @@ func (c *blockContext) decodeInfo(info *protobuf.Info) *Info {
 		i.Version = info.GetVersion()
 		i.Timestamp = toTimestamp(c.dateGranularity, info.GetTimestamp())
 		i.Changeset = info.GetChangeset()
-		i.UID = info.GetUid()
+		i.UID = UID(info.GetUid())
 
 		i.User = c.strings[info.GetUserSid()]
 
@@ -194,13 +194,13 @@ type denseInfoContext struct {
 	version   int32
 	timestamp int64
 	changeset int64
-	uid       int32
+	uid       UID
 	userSid   int32
 
 	dateGranularity int32
 	strings         []string
 	versions        []int32
-	uids            []int32
+	uids            []UID
 	timestamps      []int64
 	changesets      []int64
 	userSids        []int32
@@ -208,11 +208,16 @@ type denseInfoContext struct {
 }
 
 func (c *blockContext) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
+	uids := make([]UID, len(di.GetUid()))
+	for i, uid := range di.GetUid() {
+		uids[i] = UID(uid)
+	}
+
 	dic := &denseInfoContext{
 		dateGranularity: c.dateGranularity,
 		strings:         c.strings,
 		versions:        di.GetVersion(),
-		uids:            di.GetUid(),
+		uids:            uids,
 		timestamps:      di.GetTimestamp(),
 		changesets:      di.GetChangeset(),
 		userSids:        di.GetUserSid(),

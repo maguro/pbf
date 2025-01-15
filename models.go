@@ -147,10 +147,13 @@ type Header struct {
 
 func (r Header) foo() {}
 
+// UID is the primary key for a user.
+type UID int32
+
 // Info represents information common to Node, Way, and Relation elements.
 type Info struct {
 	Version   int32
-	UID       int32
+	UID       UID
 	Timestamp time.Time
 	Changeset int64
 	User      string
@@ -161,11 +164,14 @@ type Object interface {
 	foo()
 }
 
+// ID is the primary key of an element.
+type ID uint64
+
 // Node represents a specific point on the earth's surface defined by its
 // latitude and longitude. Each node comprises at least an id number and a
 // pair of coordinates.
 type Node struct {
-	ID   uint64
+	ID   ID
 	Tags map[string]string
 	Info *Info
 	Lat  Degrees
@@ -176,10 +182,10 @@ func (r Node) foo() {}
 
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
 type Way struct {
-	ID      uint64
+	ID      ID
 	Tags    map[string]string
 	Info    *Info
-	NodeIDs []uint64
+	NodeIDs []ID
 }
 
 func (r Way) foo() {}
@@ -200,7 +206,7 @@ const (
 
 // Member represents an element that.
 type Member struct {
-	ID   uint64
+	ID   ID
 	Type ElementType
 	Role string
 }
@@ -208,7 +214,7 @@ type Member struct {
 // Relation is a multipurpose data structure that documents a relationship
 // between two or more data elements (nodes, ways, and/or other relations).
 type Relation struct {
-	ID      uint64
+	ID      ID
 	Tags    map[string]string
 	Info    *Info
 	Members []Member
