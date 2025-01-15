@@ -12,19 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pbf
+package model
 
-import (
-	"testing"
+import "strconv"
 
-	"github.com/stretchr/testify/assert"
-)
+// ftoa converts a float to a string with no trailing zeros.
+// Snagged from github.com/dustin/go-humanize to minimize library dependencies.
+func ftoa(num float64) string {
+	return stripTrailingZeros(strconv.FormatFloat(num, 'f', 6, 64))
+}
 
-func TestElementTypeString(t *testing.T) {
-	assert.Equal(t, "NODE", NODE.String())
-	assert.Equal(t, "WAY", WAY.String())
-	assert.Equal(t, "RELATION", RELATION.String())
+func stripTrailingZeros(s string) string {
+	offset := len(s) - 1
+	for offset > 0 {
+		if s[offset] == '.' {
+			offset--
 
-	assert.Equal(t, "ElementType(-1)", (NODE - 1).String())
-	assert.Equal(t, "ElementType(3)", (RELATION + 1).String())
+			break
+		}
+
+		if s[offset] != '0' {
+			break
+		}
+
+		offset--
+	}
+
+	return s[:offset+1]
 }

@@ -29,6 +29,7 @@ import (
 
 	"m4o.io/pbf/v2"
 	"m4o.io/pbf/v2/cmd/pbf/cli"
+	"m4o.io/pbf/v2/model"
 )
 
 var (
@@ -37,7 +38,7 @@ var (
 )
 
 type extendedHeader struct {
-	pbf.Header
+	model.Header
 
 	NodeCount     int64
 	WayCount      int64
@@ -145,13 +146,13 @@ func runInfo(in io.Reader, extended bool, opts ...pbf.DecoderOption) *extendedHe
 			default:
 				for _, obj := range objs {
 					switch t := obj.(type) {
-					case *pbf.Node:
+					case *model.Node:
 						// Process Node obj.
 						nc++
-					case *pbf.Way:
+					case *model.Way:
 						// Process Way obj.
 						wc++
-					case *pbf.Relation:
+					case *model.Relation:
 						// Process Relation obj.
 						rc++
 					default:

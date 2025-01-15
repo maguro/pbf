@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"m4o.io/pbf/v2/model"
 )
 
 func TestDecodeSample(t *testing.T) {
@@ -42,7 +44,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 		t.Errorf("Error reading blob header: %v", err)
 	}
 
-	assert.Equal(t, reflect.TypeOf(Header{}), reflect.TypeOf(decoder.Header))
+	assert.Equal(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(decoder.Header))
 
 	// decode elements
 	var nEntries int
@@ -58,7 +60,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 		}
 
 		for _, obj := range objs {
-			assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(obj))
+			assert.NotEqual(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(obj))
 		}
 
 		nEntries = nEntries + len(objs)

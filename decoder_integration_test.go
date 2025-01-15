@@ -25,6 +25,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"m4o.io/pbf/v2/model"
 )
 
 func TestDecodeBremen(t *testing.T) {
@@ -49,7 +51,7 @@ func TestDecoderStop(t *testing.T) {
 		t.Errorf("Error reading blob header: %v", err)
 	}
 
-	assert.Equal(t, reflect.TypeOf(Header{}), reflect.TypeOf(decoder.Header))
+	assert.Equal(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(decoder.Header))
 
 	cancel := make(chan bool, 1)
 
@@ -76,7 +78,7 @@ func TestDecoderStop(t *testing.T) {
 			}
 		}
 
-		assert.NotEqual(t, reflect.TypeOf(Header{}), reflect.TypeOf(e))
+		assert.NotEqual(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(e))
 
 		nEntries++
 	}
