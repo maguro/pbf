@@ -40,6 +40,7 @@ const (
 // DefaultNCpu provides the default number of CPUs.
 func DefaultNCpu() uint16 {
 	cpus := uint16(runtime.GOMAXPROCS(-1))
+
 	return max(cpus-1, 1)
 }
 

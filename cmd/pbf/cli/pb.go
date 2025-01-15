@@ -22,6 +22,8 @@ import (
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
+const displayWidth = 79
+
 // progressBar is an instance of ReadCloser with an associated ProgressBar.
 // Closing this instance closes the delegate as well as clearing the terminal
 // line of progress output.
@@ -45,7 +47,7 @@ func WrapInputFile(f *os.File) (io.ReadCloser, error) {
 
 	total := int(fi.Size())
 
-	bar := pb.New(total).SetUnits(pb.U_BYTES_DEC).SetWidth(79)
+	bar := pb.New(total).SetUnits(pb.U_BYTES_DEC).SetWidth(displayWidth)
 	bar.Output = os.Stderr
 	bar.Start()
 

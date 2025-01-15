@@ -27,6 +27,7 @@ func stripTrailingZeros(s string) string {
 	for offset > 0 {
 		if s[offset] == '.' {
 			offset--
+
 			break
 		}
 

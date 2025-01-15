@@ -19,9 +19,11 @@ import (
 	"sync"
 )
 
+const bufferSize = 1024
+
 var bufferPool = sync.Pool{
 	New: func() any {
-		return bytes.NewBuffer(make([]byte, 0, 1024))
+		return bytes.NewBuffer(make([]byte, 0, bufferSize))
 	},
 }
 
@@ -30,11 +32,13 @@ type PooledBuffer struct {
 }
 
 func NewPooledBuffer() *PooledBuffer {
+	//nolint:forcetypeassert
 	return &PooledBuffer{Buffer: bufferPool.Get().(*bytes.Buffer)}
 }
 
 func (b *PooledBuffer) Close() error {
 	b.Reset()
 	bufferPool.Put(b.Buffer)
+
 	return nil
 }
