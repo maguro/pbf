@@ -56,11 +56,11 @@ func TestDegreesString(t *testing.T) {
 }
 
 func TestBoundingBoxEqualWithin(t *testing.T) {
-	bbox := BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
+	bbox := &BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
 	assert.True(t, bbox.EqualWithin(bbox, E9))
 }
 
 func TestBoundingBoxString(t *testing.T) {
-	bbox := BoundingBox{Left: -0.511482, Right: 0.335437, Top: 51.69344, Bottom: 51.28554}
-	assert.Equal(t, "[-0.511482, 51.28554, 0.335437, 51.69344]", bbox.String())
+	bbox := &BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
+	assert.Equal(t, "[(51.69344, -0.511482) (51.28554, 0.335437)]", bbox.String())
 }

@@ -21,7 +21,7 @@ The `pbf` CLI can be used to obtain summary and extended information about an
 OpenStreetMap PBF file:
 
     $ pbf info -i testdata/greater-london.osm.pbf
-    BoundingBox: [-0.511482, 51.28554, 0.335437, 51.69344]
+    BoundingBox: [(51.69344, -0.511482) (51.28554, 0.335437)]
     RequiredFeatures: OsmSchema-V0.6, DenseNodes
     OptionalFeatures: 
     WritingProgram: Osmium (http://wiki.openstreetmap.org/wiki/Osmium)
@@ -60,7 +60,7 @@ by using the `-e` option.  This causes the entire file to be scanned, which can
 take a very long time; a progress bar is displayed on `stderr`.
 
     $ pbf info -e -i testdata/greater-london.osm.pbf
-    BoundingBox: [-0.511482, 51.28554, 0.335437, 51.69344]
+    BoundingBox: [(51.69344, -0.511482) (51.28554, 0.335437)]
     RequiredFeatures: OsmSchema-V0.6, DenseNodes
     OptionalFeatures: 
     WritingProgram: Osmium (http://wiki.openstreetmap.org/wiki/Osmium)

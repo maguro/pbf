@@ -60,12 +60,23 @@ const (
 func (d Degrees) Angle() Angle { return Angle(float64(d) * float64(s1.Degree)) }
 
 func (d Degrees) String() string {
+	var sign string
+	if d < 0 {
+		sign = "-"
+	} else {
+		sign = ""
+	}
+
 	val := math.Abs(float64(d))
 	degrees := int(math.Floor(val))
 	minutes := int(math.Floor(MinutesPerDegree * (val - float64(degrees))))
 	seconds := SecondsPerDegree * (val - float64(degrees) - (float64(minutes) / MinutesPerDegree))
 
-	return fmt.Sprintf("%d\u00B0 %d' %s\"", degrees, minutes, ftoa(seconds))
+	return fmt.Sprintf("%s%d\u00B0 %d' %s\"", sign, degrees, minutes, ftoa(seconds))
+}
+
+func (d Degrees) MarshalJSON() ([]byte, error) {
+	return []byte(ftoa(float64(d))), nil
 }
 
 // EqualWithin checks if two degrees are within a specific epsilon.
@@ -105,33 +116,6 @@ func ParseDegrees(s string) (Degrees, error) {
 	}
 
 	return Degrees(u), nil
-}
-
-// BoundingBox is simply a bounding box.
-type BoundingBox struct {
-	Left   Degrees
-	Right  Degrees
-	Top    Degrees
-	Bottom Degrees
-}
-
-// EqualWithin checks if two bounding boxes are within a specific epsilon.
-func (b BoundingBox) EqualWithin(o BoundingBox, eps Epsilon) bool {
-	return b.Left.EqualWithin(o.Left, eps) &&
-		b.Right.EqualWithin(o.Right, eps) &&
-		b.Top.EqualWithin(o.Top, eps) &&
-		b.Bottom.EqualWithin(o.Bottom, eps)
-}
-
-// Contains checks if the bounding box contains the lon lat point.
-func (b BoundingBox) Contains(lon Degrees, lat Degrees) bool {
-	return b.Left <= lon && lon <= b.Right && b.Bottom <= lat && lat <= b.Top
-}
-
-func (b BoundingBox) String() string {
-	return fmt.Sprintf("[%s, %s, %s, %s]",
-		ftoa(float64(b.Left)), ftoa(float64(b.Bottom)),
-		ftoa(float64(b.Right)), ftoa(float64(b.Top)))
 }
 
 // UID is the primary key for a user.

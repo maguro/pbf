@@ -20,7 +20,7 @@ import (
 
 // Header is the contents of the OpenStreetMap PBF data file.
 type Header struct {
-	BoundingBox                      BoundingBox
+	BoundingBox                      *BoundingBox
 	RequiredFeatures                 []string
 	OptionalFeatures                 []string
 	WritingProgram                   string

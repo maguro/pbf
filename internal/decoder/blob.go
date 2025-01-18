@@ -228,7 +228,7 @@ func parseOSMHeader(buffer []byte) (*model.Header, error) {
 	}
 
 	if hb.Bbox != nil {
-		header.BoundingBox = model.BoundingBox{
+		header.BoundingBox = &model.BoundingBox{
 			Left:   toDegrees(0, 1, hb.Bbox.GetLeft()),
 			Right:  toDegrees(0, 1, hb.Bbox.GetRight()),
 			Top:    toDegrees(0, 1, hb.Bbox.GetTop()),
