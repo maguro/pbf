@@ -19,12 +19,12 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"m4o.io/pbf/v2/internal/pb"
 	"m4o.io/pbf/v2/model"
-	"m4o.io/pbf/v2/protobuf"
 )
 
 func parsePrimitiveBlock(buffer []byte) ([]model.Object, error) {
-	pb := &protobuf.PrimitiveBlock{}
+	pb := &pb.PrimitiveBlock{}
 	if err := proto.Unmarshal(buffer, pb); err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func parsePrimitiveBlock(buffer []byte) ([]model.Object, error) {
 	return elements, nil
 }
 
-func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []model.Object) {
+func (c *blockContext) decodeNodes(nodes []*pb.Node) (elements []model.Object) {
 	elements = make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
@@ -58,7 +58,7 @@ func (c *blockContext) decodeNodes(nodes []*protobuf.Node) (elements []model.Obj
 	return elements
 }
 
-func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []model.Object {
+func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Object {
 	ids := nodes.GetId()
 	elements := make([]model.Object, len(ids))
 
@@ -85,7 +85,7 @@ func (c *blockContext) decodeDenseNodes(nodes *protobuf.DenseNodes) []model.Obje
 	return elements
 }
 
-func (c *blockContext) decodeWays(nodes []*protobuf.Way) []model.Object {
+func (c *blockContext) decodeWays(nodes []*pb.Way) []model.Object {
 	elements := make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
@@ -110,7 +110,7 @@ func (c *blockContext) decodeWays(nodes []*protobuf.Way) []model.Object {
 	return elements
 }
 
-func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []model.Object {
+func (c *blockContext) decodeRelations(nodes []*pb.Relation) []model.Object {
 	elements := make([]model.Object, len(nodes))
 
 	for i, node := range nodes {
@@ -125,7 +125,7 @@ func (c *blockContext) decodeRelations(nodes []*protobuf.Relation) []model.Objec
 	return elements
 }
 
-func (c *blockContext) decodeMembers(node *protobuf.Relation) []model.Member {
+func (c *blockContext) decodeMembers(node *pb.Relation) []model.Member {
 	memids := node.GetMemids()
 	memtypes := node.GetTypes()
 	memroles := node.GetRolesSid()
@@ -155,7 +155,7 @@ func (c *blockContext) decodeTags(keyIDs, valIDs []uint32) map[string]string {
 	return tags
 }
 
-func (c *blockContext) decodeInfo(info *protobuf.Info) *model.Info {
+func (c *blockContext) decodeInfo(info *pb.Info) *model.Info {
 	i := &model.Info{Visible: true}
 	if info != nil {
 		i.Version = info.GetVersion()
@@ -181,7 +181,7 @@ type blockContext struct {
 	dateGranularity int32
 }
 
-func newBlockContext(pb *protobuf.PrimitiveBlock) *blockContext {
+func newBlockContext(pb *pb.PrimitiveBlock) *blockContext {
 	return &blockContext{
 		strings:         pb.GetStringtable().GetS(),
 		granularity:     pb.GetGranularity(),
@@ -208,7 +208,7 @@ type denseInfoContext struct {
 	visibilities    []bool
 }
 
-func (c *blockContext) newDenseInfoContext(di *protobuf.DenseInfo) *denseInfoContext {
+func (c *blockContext) newDenseInfoContext(di *pb.DenseInfo) *denseInfoContext {
 	uids := make([]model.UID, len(di.GetUid()))
 	for i, uid := range di.GetUid() {
 		uids[i] = model.UID(uid)
@@ -293,13 +293,13 @@ func (tic *tagsContext) decodeTags() map[string]string {
 }
 
 // decodeMemberType converts protobuf enum Relation_MemberType to a ElementType.
-func decodeMemberType(mt protobuf.Relation_MemberType) model.ElementType {
+func decodeMemberType(mt pb.Relation_MemberType) model.ElementType {
 	switch mt {
-	case protobuf.Relation_NODE:
+	case pb.Relation_NODE:
 		return model.NODE
-	case protobuf.Relation_WAY:
+	case pb.Relation_WAY:
 		return model.WAY
-	case protobuf.Relation_RELATION:
+	case pb.Relation_RELATION:
 		return model.RELATION
 	default:
 		panic("unrecognized member type")

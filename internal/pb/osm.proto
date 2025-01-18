@@ -16,7 +16,7 @@ syntax = "proto2";
 
 package protobuf;
 
-option go_package = "m4o.io/pbf/protobuf";
+option go_package = "m4o.io/pbf/pb";
 
 /* OSM Binary file format
 

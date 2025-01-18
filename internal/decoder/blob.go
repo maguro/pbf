@@ -29,8 +29,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/v2/internal/core"
+	"m4o.io/pbf/v2/internal/pb"
 	"m4o.io/pbf/v2/model"
-	"m4o.io/pbf/v2/protobuf"
 )
 
 const (
@@ -38,8 +38,8 @@ const (
 )
 
 type blob struct {
-	header *protobuf.BlobHeader
-	blob   *protobuf.Blob
+	header *pb.BlobHeader
+	blob   *pb.Blob
 }
 
 func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, err error) bool) {
@@ -106,7 +106,7 @@ func Decode(array []blob) (out <-chan rill.Try[[]model.Object]) {
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
 // The header is used when decoding blobs into OSM elements.
-func readBlobHeader(buffer *core.PooledBuffer, rdr io.Reader) (header *protobuf.BlobHeader, err error) {
+func readBlobHeader(buffer *core.PooledBuffer, rdr io.Reader) (header *pb.BlobHeader, err error) {
 	var size uint32
 
 	err = binary.Read(rdr, binary.BigEndian, &size)
@@ -120,7 +120,7 @@ func readBlobHeader(buffer *core.PooledBuffer, rdr io.Reader) (header *protobuf.
 		return nil, err
 	}
 
-	header = &protobuf.BlobHeader{}
+	header = &pb.BlobHeader{}
 
 	if err := proto.Unmarshal(buffer.Bytes(), header); err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func readBlobHeader(buffer *core.PooledBuffer, rdr io.Reader) (header *protobuf.
 
 // readBlob unmarshals a blob from an array of protobuf encoded bytes.  The
 // blob still needs to be decoded into OSM elements using decode().
-func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *protobuf.BlobHeader) (*protobuf.Blob, error) {
+func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *pb.BlobHeader) (*pb.Blob, error) {
 	size := header.GetDatasize()
 
 	buffer.Reset()
@@ -140,7 +140,7 @@ func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *protobuf.BlobHea
 		return nil, err
 	}
 
-	blob := &protobuf.Blob{}
+	blob := &pb.Blob{}
 
 	if err := proto.Unmarshal(buffer.Bytes(), blob); err != nil {
 		return nil, err
@@ -152,14 +152,13 @@ func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *protobuf.BlobHea
 // elements unmarshals an array of OSM elements from an array of protobuf encoded
 // bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
 // decompression.
-func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]model.Object, error) {
+func extract(header *pb.BlobHeader, blob *pb.Blob) ([]model.Object, error) {
 	var buf []byte
 
-	switch {
-	case blob.Raw != nil:
+	switch blob.Data.(type) {
+	case *pb.Blob_Raw:
 		buf = blob.GetRaw()
-
-	case blob.ZlibData != nil:
+	case *pb.Blob_ZlibData:
 		zlibBuf := core.NewPooledBuffer()
 		defer zlibBuf.Close()
 
@@ -213,7 +212,7 @@ func extract(header *protobuf.BlobHeader, blob *protobuf.Blob) ([]model.Object, 
 
 // parseOSMHeader unmarshals the OSM header from an array of protobuf encoded bytes.
 func parseOSMHeader(buffer []byte) (*model.Header, error) {
-	hb := &protobuf.HeaderBlock{}
+	hb := &pb.HeaderBlock{}
 	if err := proto.Unmarshal(buffer, hb); err != nil {
 		return nil, err
 	}

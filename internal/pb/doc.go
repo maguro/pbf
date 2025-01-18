@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package protobuf contains the Protobuf code parsing OSM binary files.
-package protobuf
+// Package pb contains the Protobuf code parsing OSM binary files.
+package pb
