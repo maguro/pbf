@@ -13,10 +13,10 @@ const (
 
 // BoundingBox is simply a bounding box.
 type BoundingBox struct {
-	Top    Degrees
-	Left   Degrees
-	Bottom Degrees
-	Right  Degrees
+	Top    Degrees `json:"top"`
+	Left   Degrees `json:"left"`
+	Bottom Degrees `json:"bottom"`
+	Right  Degrees `json:"right"`
 }
 
 // InitialBoundingBox creates a BoundingBox that is meant to be expanded.

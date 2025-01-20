@@ -41,9 +41,9 @@ var (
 type extendedHeader struct {
 	model.Header
 
-	NodeCount     int64
-	WayCount      int64
-	RelationCount int64
+	NodeCount     int64 `json:"node_count"`
+	WayCount      int64 `json:"way_count"`
+	RelationCount int64 `json:"relation_count"`
 }
 
 func init() { //nolint:gochecknoinits
