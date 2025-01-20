@@ -50,7 +50,7 @@ done:
 	for {
 		v, err := d.Decode()
 		switch {
-		case err == io.EOF:
+		case errors.Is(err, io.EOF):
 			break done
 		case err != nil:
 			panic(err.Error())

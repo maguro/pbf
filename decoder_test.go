@@ -16,6 +16,7 @@ package pbf
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"reflect"
@@ -40,9 +41,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 
 	// decode header blob
 	decoder, err := NewDecoder(context.Background(), in)
-	if err != nil {
-		t.Errorf("Error reading blob header: %v", err)
-	}
+	assert.NoError(t, err)
 
 	assert.Equal(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(decoder.Header))
 
@@ -52,7 +51,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	for {
 		objs, err := decoder.Decode()
 		if err != nil {
-			if err != io.EOF {
+			if !errors.Is(err, io.EOF) {
 				t.Errorf("Error decoding%v", err)
 			} else {
 				break

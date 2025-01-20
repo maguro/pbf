@@ -16,6 +16,7 @@ package pbf
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"runtime/trace"
@@ -57,7 +58,7 @@ func BenchmarkLondon(b *testing.B) {
 			b.Fatal(err)
 		} else {
 			for {
-				if _, err := decoder.Decode(); err == io.EOF {
+				if _, err := decoder.Decode(); errors.Is(err, io.EOF) {
 					break
 				} else if err != nil {
 					b.Fatal(err)

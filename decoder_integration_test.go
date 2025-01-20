@@ -19,6 +19,7 @@ package pbf
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"reflect"
@@ -71,7 +72,7 @@ func TestDecoderStop(t *testing.T) {
 
 		e, err := decoder.Decode()
 		if err != nil {
-			if err != io.EOF {
+			if !errors.Is(err, io.EOF) {
 				t.Errorf("Error decoding%v", err)
 			} else {
 				break

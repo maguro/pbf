@@ -56,9 +56,9 @@ func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, e
 
 			h, err := readBlobHeader(buffer, reader)
 			if err != nil {
-				if err != io.EOF {
 					slog.Error(err.Error())
 					yield(blob{}, err)
+				if !errors.Is(err, io.EOF) {
 				}
 
 				return
@@ -91,7 +91,7 @@ func Decode(array []blob) (out <-chan rill.Try[[]model.Object]) {
 		for _, enc := range array {
 			elements, err := extract(enc.header, enc.blob)
 			if err != nil {
-				slog.Error(err.Error())
+				slog.Error("unable to parse block", "error", err)
 				ch <- rill.Try[[]model.Object]{Error: err}
 
 				return

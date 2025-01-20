@@ -17,6 +17,7 @@ package info
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -139,7 +140,7 @@ func runInfo(in io.Reader, extended bool, opts ...pbf.DecoderOption) *extendedHe
 		for {
 			objs, err := d.Decode()
 			switch {
-			case err == io.EOF:
+			case errors.Is(err, io.EOF):
 				break done
 			case err != nil:
 				panic(err.Error())
