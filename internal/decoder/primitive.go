@@ -15,6 +15,7 @@
 package decoder
 
 import (
+	"fmt"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -23,16 +24,16 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-func parsePrimitiveBlock(buffer []byte) ([]model.Object, error) {
-	pb := &pb.PrimitiveBlock{}
-	if err := proto.Unmarshal(buffer, pb); err != nil {
-		return nil, err
+func parsePrimitiveBlock(buf []byte) ([]model.Object, error) {
+	blk := &pb.PrimitiveBlock{}
+	if err := proto.Unmarshal(buf, blk); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal primitive block: %w", err)
 	}
 
-	c := newBlockContext(pb)
+	c := newBlockContext(blk)
 
 	elements := make([]model.Object, 0)
-	for _, pg := range pb.GetPrimitivegroup() {
+	for _, pg := range blk.GetPrimitivegroup() {
 		elements = append(elements, c.decodeNodes(pg.GetNodes())...)
 		elements = append(elements, c.decodeDenseNodes(pg.GetDense())...)
 		elements = append(elements, c.decodeWays(pg.GetWays())...)
@@ -40,6 +41,24 @@ func parsePrimitiveBlock(buffer []byte) ([]model.Object, error) {
 	}
 
 	return elements, nil
+}
+
+type blockContext struct {
+	strings         []string
+	granularity     int32
+	latOffset       int64
+	lonOffset       int64
+	dateGranularity int32
+}
+
+func newBlockContext(pb *pb.PrimitiveBlock) *blockContext {
+	return &blockContext{
+		strings:         pb.GetStringtable().GetS(),
+		granularity:     pb.GetGranularity(),
+		latOffset:       pb.GetLatOffset(),
+		lonOffset:       pb.GetLonOffset(),
+		dateGranularity: pb.GetDateGranularity(),
+	}
 }
 
 func (c *blockContext) decodeNodes(nodes []*pb.Node) (elements []model.Object) {
@@ -50,8 +69,8 @@ func (c *blockContext) decodeNodes(nodes []*pb.Node) (elements []model.Object) {
 			ID:   model.ID(node.GetId()),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
-			Lat:  toDegrees(c.latOffset, c.granularity, node.GetLat()),
-			Lon:  toDegrees(c.lonOffset, c.granularity, node.GetLon()),
+			Lat:  model.ToDegrees(c.latOffset, c.granularity, node.GetLat()),
+			Lon:  model.ToDegrees(c.lonOffset, c.granularity, node.GetLon()),
 		}
 	}
 
@@ -77,8 +96,8 @@ func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Object {
 			ID:   model.ID(id),
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
-			Lat:  toDegrees(c.latOffset, c.granularity, lat),
-			Lon:  toDegrees(c.lonOffset, c.granularity, lon),
+			Lat:  model.ToDegrees(c.latOffset, c.granularity, lat),
+			Lon:  model.ToDegrees(c.lonOffset, c.granularity, lon),
 		}
 	}
 
@@ -173,41 +192,6 @@ func (c *blockContext) decodeInfo(info *pb.Info) *model.Info {
 	return i
 }
 
-type blockContext struct {
-	strings         []string
-	granularity     int32
-	latOffset       int64
-	lonOffset       int64
-	dateGranularity int32
-}
-
-func newBlockContext(pb *pb.PrimitiveBlock) *blockContext {
-	return &blockContext{
-		strings:         pb.GetStringtable().GetS(),
-		granularity:     pb.GetGranularity(),
-		latOffset:       pb.GetLatOffset(),
-		lonOffset:       pb.GetLonOffset(),
-		dateGranularity: pb.GetDateGranularity(),
-	}
-}
-
-type denseInfoContext struct {
-	version   int32
-	timestamp int64
-	changeset int64
-	uid       model.UID
-	userSid   int32
-
-	dateGranularity int32
-	strings         []string
-	versions        []int32
-	uids            []model.UID
-	timestamps      []int64
-	changesets      []int64
-	userSids        []int32
-	visibilities    []bool
-}
-
 func (c *blockContext) newDenseInfoContext(di *pb.DenseInfo) *denseInfoContext {
 	uids := make([]model.UID, len(di.GetUid()))
 	for i, uid := range di.GetUid() {
@@ -232,6 +216,23 @@ func (c *blockContext) newDenseInfoContext(di *pb.DenseInfo) *denseInfoContext {
 	}
 
 	return dic
+}
+
+type denseInfoContext struct {
+	version   int32
+	timestamp int64
+	changeset int64
+	uid       model.UID
+	userSid   int32
+
+	dateGranularity int32
+	strings         []string
+	versions        []int32
+	uids            []model.UID
+	timestamps      []int64
+	changesets      []int64
+	userSids        []int32
+	visibilities    []bool
 }
 
 func (dic *denseInfoContext) decodeInfo(i int) *model.Info {

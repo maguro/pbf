@@ -12,20 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package model_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"m4o.io/pbf/v2/model"
 )
 
 func TestDegreesAngle(t *testing.T) {
-	assert.True(t, Angle(0.78539816).EqualWithin(Degrees(45.0).Angle(), E7))
+	assert.True(t, model.Angle(0.78539816).EqualWithin(model.Degrees(45.0).Angle(), model.E7))
 }
 
 func TestDegreesEx(t *testing.T) {
-	d := Degrees(53.123456789)
+	d := model.Degrees(53.123456789)
 
 	assert.Equal(t, int32(5312346), d.E5())
 	assert.Equal(t, int32(53123457), d.E6())
@@ -33,34 +35,24 @@ func TestDegreesEx(t *testing.T) {
 }
 
 func TestDegreesParse(t *testing.T) {
-	d, err := ParseDegrees("53.123450")
+	d, err := model.ParseDegrees("53.123450")
 	if err != nil {
 		t.Error(err)
 	}
 
-	assert.True(t, Degrees(53.123450).EqualWithin(d, E5))
+	assert.True(t, model.Degrees(53.123450).EqualWithin(d, model.E5))
 
-	_, err = ParseDegrees("abc")
+	_, err = model.ParseDegrees("abc")
 	if err == nil {
 		t.Error("Parsing should have failed")
 	}
 }
 
 func TestDegreesEqualWithin(t *testing.T) {
-	assert.True(t, Degrees(53.123450).EqualWithin(Degrees(53.123454), E5))
-	assert.False(t, Degrees(53.123450).EqualWithin(Degrees(53.123455), E5))
+	assert.True(t, model.Degrees(53.123450).EqualWithin(model.Degrees(53.123454), model.E5))
+	assert.False(t, model.Degrees(53.123450).EqualWithin(model.Degrees(53.123455), model.E5))
 }
 
 func TestDegreesString(t *testing.T) {
-	assert.Equal(t, "53° 7' 24.42\"", Degrees(53.123450).String())
-}
-
-func TestBoundingBoxEqualWithin(t *testing.T) {
-	bbox := &BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
-	assert.True(t, bbox.EqualWithin(bbox, E9))
-}
-
-func TestBoundingBoxString(t *testing.T) {
-	bbox := &BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
-	assert.Equal(t, "[(51.69344, -0.511482) (51.28554, 0.335437)]", bbox.String())
+	assert.Equal(t, "53° 7' 24.42\"", model.Degrees(53.123450).String())
 }

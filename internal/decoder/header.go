@@ -17,9 +17,12 @@ package decoder
 import (
 	"fmt"
 	"io"
-	"reflect"
+	"time"
+
+	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/v2/internal/core"
+	"m4o.io/pbf/v2/internal/pb"
 	"m4o.io/pbf/v2/model"
 )
 
@@ -27,26 +30,42 @@ func LoadHeader(reader io.Reader) (model.Header, error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()
 
-	h, err := readBlobHeader(buf, reader)
+	blob, err := readBlob(reader)
 	if err != nil {
-		return model.Header{}, err
+		return model.Header{}, fmt.Errorf("error reading blob for header: %w", err)
 	}
 
-	b, err := readBlob(buf, reader, h)
+	unpacked, err := unpack(buf, blob)
 	if err != nil {
-		return model.Header{}, err
+		return model.Header{}, fmt.Errorf("error unpacking blob: %w", err)
 	}
 
-	e, err := extract(h, b)
-	if err != nil {
-		return model.Header{}, err
+	var hb pb.HeaderBlock
+	if err = proto.Unmarshal(unpacked, &hb); err != nil {
+		return model.Header{}, fmt.Errorf("error unmarshalling header: %w", err)
 	}
 
-	if hdr, ok := e[0].(*model.Header); !ok {
-		err = fmt.Errorf("expected header data but got %v", reflect.TypeOf(e[0]))
-
-		return model.Header{}, err
-	} else {
-		return *hdr, nil
+	hdr := model.Header{
+		RequiredFeatures:                 hb.GetRequiredFeatures(),
+		OptionalFeatures:                 hb.GetOptionalFeatures(),
+		WritingProgram:                   hb.GetWritingprogram(),
+		Source:                           hb.GetSource(),
+		OsmosisReplicationBaseURL:        hb.GetOsmosisReplicationBaseUrl(),
+		OsmosisReplicationSequenceNumber: hb.GetOsmosisReplicationSequenceNumber(),
 	}
+
+	if hb.Bbox != nil {
+		hdr.BoundingBox = &model.BoundingBox{
+			Left:   model.ToDegrees(0, 1, hb.Bbox.GetLeft()),
+			Right:  model.ToDegrees(0, 1, hb.Bbox.GetRight()),
+			Top:    model.ToDegrees(0, 1, hb.Bbox.GetTop()),
+			Bottom: model.ToDegrees(0, 1, hb.Bbox.GetBottom()),
+		}
+	}
+
+	if hb.OsmosisReplicationTimestamp != nil {
+		hdr.OsmosisReplicationTimestamp = time.Unix(*hb.OsmosisReplicationTimestamp, 0)
+	}
+
+	return hdr, nil
 }

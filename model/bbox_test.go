@@ -1,3 +1,17 @@
+// Copyright 2017-25 the original author or authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package model_test
 
 import (
@@ -82,4 +96,14 @@ func TestBoundingBox_ExpandWithBoundingBox(t *testing.T) {
 	assert.True(t, bbox.Contains(45, -90))
 	assert.True(t, bbox.Contains(-45, -90))
 	assert.True(t, bbox.Contains(45, 90))
+}
+
+func TestBoundingBoxEqualWithin(t *testing.T) {
+	bbox := &model.BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
+	assert.True(t, bbox.EqualWithin(bbox, model.E9))
+}
+
+func TestBoundingBoxString(t *testing.T) {
+	bbox := &model.BoundingBox{Top: 51.69344, Left: -0.511482, Bottom: 51.28554, Right: 0.335437}
+	assert.Equal(t, "[(51.69344, -0.511482) (51.28554, 0.335437)]", bbox.String())
 }

@@ -15,15 +15,12 @@
 package decoder
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
-	"time"
 
 	"github.com/destel/rill"
 	"google.golang.org/protobuf/proto"
@@ -33,17 +30,10 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-const (
-	coordinatesPerDegree = 1e-9
-)
-
-type blob struct {
-	header *pb.BlobHeader
-	blob   *pb.Blob
-}
-
-func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, err error) bool) {
-	return func(yield func(enc blob, err error) bool) {
+// GenerateBlobReader creates an iterator that returns primitive blobs read
+// off of the reader.
+func GenerateBlobReader(ctx context.Context, reader io.Reader) func(yield func(enc *pb.Blob, err error) bool) {
+	return func(yield func(enc *pb.Blob, err error) bool) {
 		buffer := core.NewPooledBuffer()
 		defer buffer.Close()
 
@@ -54,25 +44,17 @@ func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, e
 			default:
 			}
 
-			h, err := readBlobHeader(buffer, reader)
+			blob, err := readBlob(reader)
 			if err != nil {
-					slog.Error(err.Error())
-					yield(blob{}, err)
 				if !errors.Is(err, io.EOF) {
+					slog.Error("unable to read blob", "error", err)
+					yield(nil, err)
 				}
 
 				return
 			}
 
-			b, err := readBlob(buffer, reader, h)
-			if err != nil {
-				slog.Error(err.Error())
-				yield(blob{}, err)
-
-				return
-			}
-
-			if !yield(blob{header: h, blob: b}, nil) {
+			if !yield(blob, nil) {
 				return
 			}
 
@@ -81,15 +63,30 @@ func Generate(ctx context.Context, reader io.Reader) func(yield func(enc blob, e
 	}
 }
 
-func Decode(array []blob) (out <-chan rill.Try[[]model.Object]) {
+// DecodeBatch unpacks a batch of primitive blobs and parses them into
+// primitive blocks which are subsequently sent down the out channel.
+func DecodeBatch(array []*pb.Blob) (out <-chan rill.Try[[]model.Object]) {
 	ch := make(chan rill.Try[[]model.Object])
 	out = ch
 
+	buf := core.NewPooledBuffer()
+
 	go func() {
 		defer close(ch)
+		defer buf.Close()
 
-		for _, enc := range array {
-			elements, err := extract(enc.header, enc.blob)
+		for _, blob := range array {
+			buf.Reset()
+
+			unpacked, err := unpack(buf, blob)
+			if err != nil {
+				slog.Error("unable to unpack blob", "error", err)
+				ch <- rill.Try[[]model.Object]{Error: err}
+
+				return
+			}
+
+			elements, err := parsePrimitiveBlock(unpacked)
 			if err != nil {
 				slog.Error("unable to parse block", "error", err)
 				ch <- rill.Try[[]model.Object]{Error: err}
@@ -101,149 +98,67 @@ func Decode(array []blob) (out <-chan rill.Try[[]model.Object]) {
 		}
 	}()
 
-	return
+	return out
+}
+
+// readBlob reads a PBF blob from the rdr.
+func readBlob(rdr io.Reader) (*pb.Blob, error) {
+	h, err := readBlobHeader(rdr)
+	if err != nil {
+		return nil, fmt.Errorf("error reading blob header: %w", err)
+	}
+
+	b, err := readBlobData(rdr, int64(h.GetDatasize()))
+	if err != nil {
+		return nil, fmt.Errorf("error reading blob: %w", err)
+	}
+
+	return b, nil
 }
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
 // The header is used when decoding blobs into OSM elements.
-func readBlobHeader(buffer *core.PooledBuffer, rdr io.Reader) (header *pb.BlobHeader, err error) {
+func readBlobHeader(rdr io.Reader) (header *pb.BlobHeader, err error) {
+	buf := core.NewPooledBuffer()
+	defer buf.Close()
+
 	var size uint32
 
 	err = binary.Read(rdr, binary.BigEndian, &size)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading blob size: %w", err)
 	}
 
-	buffer.Reset()
-
-	if _, err := io.CopyN(buffer, rdr, int64(size)); err != nil {
-		return nil, err
+	if n, err := io.CopyN(buf, rdr, int64(size)); err != nil {
+		return nil, fmt.Errorf("error reading blob: %w", err)
+	} else if n != int64(size) {
+		return nil, fmt.Errorf("error reading blob: expected %d bytes, got %d", size, n)
 	}
 
 	header = &pb.BlobHeader{}
 
-	if err := proto.Unmarshal(buffer.Bytes(), header); err != nil {
-		return nil, err
+	if err := proto.Unmarshal(buf.Bytes(), header); err != nil {
+		return nil, fmt.Errorf("error unmarshalling blob header: %w", err)
 	}
 
 	return header, nil
 }
 
-// readBlob unmarshals a blob from an array of protobuf encoded bytes.  The
-// blob still needs to be decoded into OSM elements using decode().
-func readBlob(buffer *core.PooledBuffer, rdr io.Reader, header *pb.BlobHeader) (*pb.Blob, error) {
-	size := header.GetDatasize()
+// readBlobData unmarshals a blob from an array of protobuf encoded bytes.  The
+// blob still needs to be decoded into OSM elements.
+func readBlobData(rdr io.Reader, size int64) (*pb.Blob, error) {
+	buf := core.NewPooledBuffer()
+	defer buf.Close()
 
-	buffer.Reset()
-
-	if _, err := io.CopyN(buffer, rdr, int64(size)); err != nil {
-		return nil, err
+	if _, err := io.CopyN(buf, rdr, size); err != nil {
+		return nil, fmt.Errorf("error reading blob: %w", err)
 	}
 
 	blob := &pb.Blob{}
 
-	if err := proto.Unmarshal(buffer.Bytes(), blob); err != nil {
-		return nil, err
+	if err := proto.Unmarshal(buf.Bytes(), blob); err != nil {
+		return nil, fmt.Errorf("error unmarshalling blob: %w", err)
 	}
 
 	return blob, nil
-}
-
-// elements unmarshals an array of OSM elements from an array of protobuf encoded
-// bytes.  The bytes could possibly be compressed; zlibBuf is used to facilitate
-// decompression.
-func extract(header *pb.BlobHeader, blob *pb.Blob) ([]model.Object, error) {
-	var buf []byte
-
-	switch blob.Data.(type) {
-	case *pb.Blob_Raw:
-		buf = blob.GetRaw()
-	case *pb.Blob_ZlibData:
-		zlibBuf := core.NewPooledBuffer()
-		defer zlibBuf.Close()
-
-		r, err := zlib.NewReader(bytes.NewReader(blob.GetZlibData()))
-		if err != nil {
-			return nil, err
-		}
-
-		zlibBuf.Reset()
-
-		rawBufferSize := int(blob.GetRawSize() + bytes.MinRead)
-		if rawBufferSize > zlibBuf.Cap() {
-			zlibBuf.Grow(rawBufferSize)
-		}
-
-		_, err = zlibBuf.ReadFrom(r)
-		if err != nil {
-			return nil, err
-		}
-
-		if zlibBuf.Len() != int(blob.GetRawSize()) {
-			err = fmt.Errorf("raw blob data size %d but expected %d", zlibBuf.Len(), blob.GetRawSize())
-
-			return nil, err
-		}
-
-		buf = zlibBuf.Bytes()
-
-	default:
-		return nil, errors.New("unknown blob data type")
-	}
-
-	ht := *header.Type
-
-	switch ht {
-	case "OSMHeader":
-		{
-			h, err := parseOSMHeader(buf)
-			if err != nil {
-				return nil, err
-			}
-
-			return []model.Object{h}, nil
-		}
-	case "OSMData":
-		return parsePrimitiveBlock(buf)
-	default:
-		return nil, fmt.Errorf("unknown header type %s", ht)
-	}
-}
-
-// parseOSMHeader unmarshals the OSM header from an array of protobuf encoded bytes.
-func parseOSMHeader(buffer []byte) (*model.Header, error) {
-	hb := &pb.HeaderBlock{}
-	if err := proto.Unmarshal(buffer, hb); err != nil {
-		return nil, err
-	}
-
-	header := &model.Header{
-		RequiredFeatures:                 hb.GetRequiredFeatures(),
-		OptionalFeatures:                 hb.GetOptionalFeatures(),
-		WritingProgram:                   hb.GetWritingprogram(),
-		Source:                           hb.GetSource(),
-		OsmosisReplicationBaseURL:        hb.GetOsmosisReplicationBaseUrl(),
-		OsmosisReplicationSequenceNumber: hb.GetOsmosisReplicationSequenceNumber(),
-	}
-
-	if hb.Bbox != nil {
-		header.BoundingBox = &model.BoundingBox{
-			Left:   toDegrees(0, 1, hb.Bbox.GetLeft()),
-			Right:  toDegrees(0, 1, hb.Bbox.GetRight()),
-			Top:    toDegrees(0, 1, hb.Bbox.GetTop()),
-			Bottom: toDegrees(0, 1, hb.Bbox.GetBottom()),
-		}
-	}
-
-	if hb.OsmosisReplicationTimestamp != nil {
-		header.OsmosisReplicationTimestamp = time.Unix(*hb.OsmosisReplicationTimestamp, 0)
-	}
-
-	return header, nil
-}
-
-// toDegrees converts a coordinate into Degrees, given the offset and
-// granularity of the coordinate.
-func toDegrees(offset int64, granularity int32, coordinate int64) model.Degrees {
-	return coordinatesPerDegree * model.Degrees(offset+(int64(granularity)*coordinate))
 }
