@@ -29,5 +29,3 @@ type Header struct {
 	OsmosisReplicationSequenceNumber int64        `json:"osmosis_replication_sequence_number,omitempty"`
 	OsmosisReplicationBaseURL        string       `json:"osmosis_replication_base_url,omitempty"`
 }
-
-func (r Header) foo() {}

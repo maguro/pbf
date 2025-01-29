@@ -15,7 +15,7 @@
 // Package model contains the shared model for OpenStreetMap PBF encoders/decoders.
 package model
 
-//go:generate stringer -type=ElementType
+//go:generate stringer -type=EntityType
 
 import (
 	"time"
@@ -24,7 +24,7 @@ import (
 // UID is the primary key for a user.
 type UID int32
 
-// Info represents information common to Node, Way, and Relation elements.
+// Info represents information common to Node, Way, and Relation entities.
 type Info struct {
 	Version   int32
 	UID       UID
@@ -34,12 +34,18 @@ type Info struct {
 	Visible   bool
 }
 
-type Object interface {
-	foo()
+type Entity interface {
+	isEntity() // prevents extensions
+
+	GetID() ID
+
+	GetTags() map[string]string
+
+	GetInfo() *Info
 }
 
-// ID is the primary key of an element.
-type ID uint64
+// ID is the primary key of an entity.
+type ID int64
 
 // Node represents a specific point on the earth's surface defined by its
 // latitude and longitude. Each node comprises at least an id number and a
@@ -52,7 +58,21 @@ type Node struct {
 	Lon  Degrees
 }
 
-func (r Node) foo() {}
+var _ Entity = Node{}
+
+func (r Node) isEntity() {}
+
+func (r Node) GetID() ID {
+	return r.ID
+}
+
+func (r Node) GetTags() map[string]string {
+	return r.Tags
+}
+
+func (r Node) GetInfo() *Info {
+	return r.Info
+}
 
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
 type Way struct {
@@ -62,14 +82,28 @@ type Way struct {
 	NodeIDs []ID
 }
 
-func (r Way) foo() {}
+var _ Entity = Way{}
 
-// ElementType is an enumeration of relation types.
-type ElementType int
+func (w Way) isEntity() {}
+
+func (w Way) GetID() ID {
+	return w.ID
+}
+
+func (w Way) GetTags() map[string]string {
+	return w.Tags
+}
+
+func (w Way) GetInfo() *Info {
+	return w.Info
+}
+
+// EntityType is an enumeration of PBF entity types.
+type EntityType int32
 
 const (
 	// NODE denotes that the member is a node.
-	NODE ElementType = iota
+	NODE EntityType = iota
 
 	// WAY denotes that the member is a way.
 	WAY
@@ -78,15 +112,15 @@ const (
 	RELATION
 )
 
-// Member represents an element that.
+// Member represents an entity that.
 type Member struct {
 	ID   ID
-	Type ElementType
+	Type EntityType
 	Role string
 }
 
 // Relation is a multipurpose data structure that documents a relationship
-// between two or more data elements (nodes, ways, and/or other relations).
+// between two or more data entities (nodes, ways, and/or other relations).
 type Relation struct {
 	ID      ID
 	Tags    map[string]string
@@ -94,4 +128,18 @@ type Relation struct {
 	Members []Member
 }
 
-func (r Relation) foo() {}
+var _ Entity = Relation{}
+
+func (r Relation) isEntity() {}
+
+func (r Relation) GetID() ID {
+	return r.ID
+}
+
+func (r Relation) GetTags() map[string]string {
+	return r.Tags
+}
+
+func (r Relation) GetInfo() *Info {
+	return r.Info
+}

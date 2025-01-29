@@ -22,12 +22,10 @@ import (
 	"io"
 	"log/slog"
 
-	"github.com/destel/rill"
 	"google.golang.org/protobuf/proto"
 
 	"m4o.io/pbf/v2/internal/core"
 	"m4o.io/pbf/v2/internal/pb"
-	"m4o.io/pbf/v2/model"
 )
 
 // GenerateBlobReader creates an iterator that returns primitive blobs read
@@ -63,44 +61,6 @@ func GenerateBlobReader(ctx context.Context, reader io.Reader) func(yield func(e
 	}
 }
 
-// DecodeBatch unpacks a batch of primitive blobs and parses them into
-// primitive blocks which are subsequently sent down the out channel.
-func DecodeBatch(array []*pb.Blob) (out <-chan rill.Try[[]model.Object]) {
-	ch := make(chan rill.Try[[]model.Object])
-	out = ch
-
-	buf := core.NewPooledBuffer()
-
-	go func() {
-		defer close(ch)
-		defer buf.Close()
-
-		for _, blob := range array {
-			buf.Reset()
-
-			unpacked, err := unpack(buf, blob)
-			if err != nil {
-				slog.Error("unable to unpack blob", "error", err)
-				ch <- rill.Try[[]model.Object]{Error: err}
-
-				return
-			}
-
-			elements, err := parsePrimitiveBlock(unpacked)
-			if err != nil {
-				slog.Error("unable to parse block", "error", err)
-				ch <- rill.Try[[]model.Object]{Error: err}
-
-				return
-			}
-
-			ch <- rill.Try[[]model.Object]{Value: elements}
-		}
-	}()
-
-	return out
-}
-
 // readBlob reads a PBF blob from the rdr.
 func readBlob(rdr io.Reader) (*pb.Blob, error) {
 	h, err := readBlobHeader(rdr)
@@ -117,7 +77,7 @@ func readBlob(rdr io.Reader) (*pb.Blob, error) {
 }
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
-// The header is used when decoding blobs into OSM elements.
+// The header is used when decoding blobs into OSM entities.
 func readBlobHeader(rdr io.Reader) (header *pb.BlobHeader, err error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()
@@ -145,7 +105,7 @@ func readBlobHeader(rdr io.Reader) (header *pb.BlobHeader, err error) {
 }
 
 // readBlobData unmarshals a blob from an array of protobuf encoded bytes.  The
-// blob still needs to be decoded into OSM elements.
+// blob still needs to be decoded into OSM entities.
 func readBlobData(rdr io.Reader, size int64) (*pb.Blob, error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()

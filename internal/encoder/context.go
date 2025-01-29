@@ -1,4 +1,4 @@
-// Copyright 2017-25 the original author or authors.
+// Copyright 2025 the original author or authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package encoder
 
-import (
-	"testing"
+import "io"
 
-	"github.com/stretchr/testify/assert"
-)
+type Context struct {
+	wrtr        io.Writer
+	compression BlobCompression
+}
 
-func TestElementTypeString(t *testing.T) {
-	assert.Equal(t, "NODE", NODE.String())
-	assert.Equal(t, "WAY", WAY.String())
-	assert.Equal(t, "RELATION", RELATION.String())
-
-	assert.Equal(t, "ElementType(-1)", (NODE - 1).String())
-	assert.Equal(t, "ElementType(3)", (RELATION + 1).String())
+func NewContext(wrtr io.Writer, compression BlobCompression) *Context {
+	return &Context{
+		wrtr:        wrtr,
+		compression: compression,
+	}
 }

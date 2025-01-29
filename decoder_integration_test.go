@@ -62,7 +62,7 @@ func TestDecoderStop(t *testing.T) {
 		decoder.Close()
 	}()
 
-	// decode elements
+	// decode entities
 	var nEntries int
 
 	for {

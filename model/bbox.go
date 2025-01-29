@@ -38,11 +38,11 @@ func (b *BoundingBox) EqualWithin(o *BoundingBox, eps Epsilon) bool {
 }
 
 // Contains checks if the bounding box contains the lat lng point.
-func (b *BoundingBox) Contains(lat Degrees, lng Degrees) bool {
-	return b.Left <= lng && lng <= b.Right && b.Bottom <= lat && lat <= b.Top
+func (b *BoundingBox) Contains(lat Degrees, lon Degrees) bool {
+	return b.Left <= lon && lon <= b.Right && b.Bottom <= lat && lat <= b.Top
 }
 
-func (b *BoundingBox) ExpandWithLatLng(lat, lng Degrees) {
+func (b *BoundingBox) ExpandWithLatLng(lat, lon Degrees) {
 	if b.Top < lat {
 		b.Top = lat
 	}
@@ -51,12 +51,12 @@ func (b *BoundingBox) ExpandWithLatLng(lat, lng Degrees) {
 		b.Bottom = lat
 	}
 
-	if b.Left > lng {
-		b.Left = lng
+	if b.Left > lon {
+		b.Left = lon
 	}
 
-	if b.Right < lng {
-		b.Right = lng
+	if b.Right < lon {
+		b.Right = lon
 	}
 }
 

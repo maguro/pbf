@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	coordinatesPerDegree = 1e-9
+	coordinatesPerDegree = 1e9
 )
 
 // Degrees is the decimal degree representation of a longitude or latitude.
@@ -98,10 +98,23 @@ func (d Degrees) E6() int32 { return round(float64(d * Millionths)) }
 // E7 returns the angle in ten millionths of degrees.
 func (d Degrees) E7() int32 { return round(float64(d * TenMillionths)) }
 
-// ToDegrees converts a coordinate into Degrees, given the offset and
-// granularity of the coordinate.
+// Coordinate is nano-degrees with no granularity.
+func (d Degrees) Coordinate() int64 {
+	return int64(d * coordinatesPerDegree)
+}
+
+// ToDegrees converts a nano-degree coordinate into Degrees, given the offset
+// and granularity of the coordinate.
 func ToDegrees(offset int64, granularity int32, coordinate int64) Degrees {
-	return coordinatesPerDegree * Degrees(offset+(int64(granularity)*coordinate))
+	return Degrees(float64(offset+(int64(granularity)*coordinate)) / coordinatesPerDegree)
+}
+
+// ToCoordinate converts Degrees to a nano-degrees coordinate, given the offset
+// and granularity of the desired coordinate.
+func ToCoordinate(offset int64, granularity int32, degrees Degrees) int64 {
+	shifted := degrees.Coordinate() - offset
+
+	return shifted / int64(granularity)
 }
 
 // round returns the value rounded to nearest as an int32.

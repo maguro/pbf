@@ -24,7 +24,7 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-func parsePrimitiveBlock(buf []byte) ([]model.Object, error) {
+func parsePrimitiveBlock(buf []byte) ([]model.Entity, error) {
 	blk := &pb.PrimitiveBlock{}
 	if err := proto.Unmarshal(buf, blk); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal primitive block: %w", err)
@@ -32,15 +32,15 @@ func parsePrimitiveBlock(buf []byte) ([]model.Object, error) {
 
 	c := newBlockContext(blk)
 
-	elements := make([]model.Object, 0)
+	entities := make([]model.Entity, 0)
 	for _, pg := range blk.GetPrimitivegroup() {
-		elements = append(elements, c.decodeNodes(pg.GetNodes())...)
-		elements = append(elements, c.decodeDenseNodes(pg.GetDense())...)
-		elements = append(elements, c.decodeWays(pg.GetWays())...)
-		elements = append(elements, c.decodeRelations(pg.GetRelations())...)
+		entities = append(entities, c.decodeNodes(pg.GetNodes())...)
+		entities = append(entities, c.decodeDenseNodes(pg.GetDense())...)
+		entities = append(entities, c.decodeWays(pg.GetWays())...)
+		entities = append(entities, c.decodeRelations(pg.GetRelations())...)
 	}
 
-	return elements, nil
+	return entities, nil
 }
 
 type blockContext struct {
@@ -61,11 +61,11 @@ func newBlockContext(pb *pb.PrimitiveBlock) *blockContext {
 	}
 }
 
-func (c *blockContext) decodeNodes(nodes []*pb.Node) (elements []model.Object) {
-	elements = make([]model.Object, len(nodes))
+func (c *blockContext) decodeNodes(nodes []*pb.Node) (entities []model.Entity) {
+	entities = make([]model.Entity, len(nodes))
 
 	for i, node := range nodes {
-		elements[i] = &model.Node{
+		entities[i] = &model.Node{
 			ID:   model.ID(node.GetId()),
 			Tags: c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info: c.decodeInfo(node.GetInfo()),
@@ -74,12 +74,12 @@ func (c *blockContext) decodeNodes(nodes []*pb.Node) (elements []model.Object) {
 		}
 	}
 
-	return elements
+	return entities
 }
 
-func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Object {
+func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Entity {
 	ids := nodes.GetId()
-	elements := make([]model.Object, len(ids))
+	entities := make([]model.Entity, len(ids))
 
 	tic := c.newTagsContext(nodes.GetKeysVals())
 	dic := c.newDenseInfoContext(nodes.GetDenseinfo())
@@ -88,11 +88,11 @@ func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Object {
 
 	var id, lat, lon int64
 	for i := range ids {
-		id = ids[i] + id
-		lat = lats[i] + lat
-		lon = lons[i] + lon
+		id += ids[i]
+		lat += lats[i]
+		lon += lons[i]
 
-		elements[i] = &model.Node{
+		entities[i] = &model.Node{
 			ID:   model.ID(id),
 			Tags: tic.decodeTags(),
 			Info: dic.decodeInfo(i),
@@ -101,11 +101,11 @@ func (c *blockContext) decodeDenseNodes(nodes *pb.DenseNodes) []model.Object {
 		}
 	}
 
-	return elements
+	return entities
 }
 
-func (c *blockContext) decodeWays(nodes []*pb.Way) []model.Object {
-	elements := make([]model.Object, len(nodes))
+func (c *blockContext) decodeWays(nodes []*pb.Way) []model.Entity {
+	entities := make([]model.Entity, len(nodes))
 
 	for i, node := range nodes {
 		refs := node.GetRefs()
@@ -118,7 +118,7 @@ func (c *blockContext) decodeWays(nodes []*pb.Way) []model.Object {
 			nodeIDs[j] = model.ID(nodeID)
 		}
 
-		elements[i] = &model.Way{
+		entities[i] = &model.Way{
 			ID:      model.ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			NodeIDs: nodeIDs,
@@ -126,14 +126,14 @@ func (c *blockContext) decodeWays(nodes []*pb.Way) []model.Object {
 		}
 	}
 
-	return elements
+	return entities
 }
 
-func (c *blockContext) decodeRelations(nodes []*pb.Relation) []model.Object {
-	elements := make([]model.Object, len(nodes))
+func (c *blockContext) decodeRelations(nodes []*pb.Relation) []model.Entity {
+	entities := make([]model.Entity, len(nodes))
 
 	for i, node := range nodes {
-		elements[i] = &model.Relation{
+		entities[i] = &model.Relation{
 			ID:      model.ID(node.GetId()),
 			Tags:    c.decodeTags(node.GetKeys(), node.GetVals()),
 			Info:    c.decodeInfo(node.GetInfo()),
@@ -141,7 +141,7 @@ func (c *blockContext) decodeRelations(nodes []*pb.Relation) []model.Object {
 		}
 	}
 
-	return elements
+	return entities
 }
 
 func (c *blockContext) decodeMembers(node *pb.Relation) []model.Member {
@@ -236,11 +236,11 @@ type denseInfoContext struct {
 }
 
 func (dic *denseInfoContext) decodeInfo(i int) *model.Info {
-	dic.version = dic.versions[i] + dic.version
-	dic.uid = dic.uids[i] + dic.uid
-	dic.timestamp = dic.timestamps[i] + dic.timestamp
-	dic.changeset = dic.changesets[i] + dic.changeset
-	dic.userSid = dic.userSids[i] + dic.userSid
+	dic.version += dic.versions[i]
+	dic.uid += dic.uids[i]
+	dic.timestamp += dic.timestamps[i]
+	dic.changeset += dic.changesets[i]
+	dic.userSid += dic.userSids[i]
 
 	info := &model.Info{
 		Version:   dic.version,
@@ -293,8 +293,8 @@ func (tic *tagsContext) decodeTags() map[string]string {
 	return tags
 }
 
-// decodeMemberType converts protobuf enum Relation_MemberType to a ElementType.
-func decodeMemberType(mt pb.Relation_MemberType) model.ElementType {
+// decodeMemberType converts protobuf enum Relation_MemberType to a EntityType.
+func decodeMemberType(mt pb.Relation_MemberType) model.EntityType {
 	switch mt {
 	case pb.Relation_NODE:
 		return model.NODE
@@ -310,7 +310,5 @@ func decodeMemberType(mt pb.Relation_MemberType) model.ElementType {
 // toTimestamp converts a timestamp with a specific granularity, in units of
 // milliseconds, to a UTC timestamp of type Time.
 func toTimestamp(granularity int32, timestamp int32) time.Time {
-	ms := time.Duration(timestamp*granularity) * time.Millisecond
-
-	return time.Unix(0, ms.Nanoseconds()).UTC()
+	return time.UnixMilli(int64(timestamp) * int64(granularity)).UTC()
 }

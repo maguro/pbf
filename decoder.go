@@ -27,9 +27,9 @@ import (
 
 // Decoder reads and decodes OpenStreetMap PBF data from an input stream.
 type Decoder struct {
-	Header  model.Header
-	Objects <-chan rill.Try[[]model.Object]
-	cancel  context.CancelFunc
+	Header   model.Header
+	Entities <-chan rill.Try[[]model.Entity]
+	cancel   context.CancelFunc
 }
 
 // NewDecoder returns a new decoder, configured with cfg, that reads from
@@ -54,9 +54,9 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 
 	batches := rill.Batch(blobs, cfg.protoBatchSize, time.Second)
 
-	objects := rill.FlatMap(batches, int(cfg.nCPU), decoder.DecodeBatch)
+	entities := rill.FlatMap(batches, int(cfg.nCPU), decoder.DecodeBatch)
 
-	d.Objects = objects
+	d.Entities = entities
 
 	return d, nil
 }
@@ -65,8 +65,8 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 // or Relation struct representing the underlying OpenStreetMap PBF data, or
 // error encountered. The end of the input stream is reported by an io.EOF
 // error.
-func (d *Decoder) Decode() ([]model.Object, error) {
-	decoded, more := <-d.Objects
+func (d *Decoder) Decode() ([]model.Entity, error) {
+	decoded, more := <-d.Entities
 	if !more {
 		return nil, io.EOF
 	}
@@ -77,5 +77,5 @@ func (d *Decoder) Decode() ([]model.Object, error) {
 // Close will cancel the background decoding pipeline.
 func (d *Decoder) Close() {
 	d.cancel()
-	rill.DrainNB(d.Objects)
+	rill.DrainNB(d.Entities)
 }

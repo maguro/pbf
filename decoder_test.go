@@ -45,7 +45,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 
 	assert.Equal(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(decoder.Header))
 
-	// decode elements
+	// decode entities
 	var nEntries int
 
 	for {
@@ -65,5 +65,5 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 		nEntries = nEntries + len(objs)
 	}
 
-	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of elements")
+	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of entities")
 }

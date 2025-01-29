@@ -138,14 +138,14 @@ func runInfo(in io.Reader, extended bool, opts ...pbf.DecoderOption) *extendedHe
 	if extended {
 	done:
 		for {
-			objs, err := d.Decode()
+			entities, err := d.Decode()
 			switch {
 			case errors.Is(err, io.EOF):
 				break done
 			case err != nil:
 				panic(err.Error())
 			default:
-				for _, obj := range objs {
+				for _, obj := range entities {
 					switch t := obj.(type) {
 					case *model.Node:
 						// Process Node obj.
