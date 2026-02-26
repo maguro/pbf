@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Required Reads
+- Before making any code or test edits, read `CODING_STANDARDS.md`.
+- If `AGENTS.md` and `CODING_STANDARDS.md` differ, follow the stricter rule.
+
 ## Project Overview
 - Language: Go
 - Module: `m4o.io/pbf/v2`
