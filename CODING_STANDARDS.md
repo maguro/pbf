@@ -32,3 +32,5 @@
 ## Dependencies and Architecture
 - Avoid adding dependencies without a clear need.
 - Keep `internal/` package boundaries explicit and non-public.
+- For unexported constructors/helpers, assume callers uphold internal contracts.
+- Do not add defensive branches for impossible internal states guaranteed by public entrypoints.

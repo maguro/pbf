@@ -19,6 +19,11 @@
 - Prefer table-driven tests for new behavior.
 - Avoid introducing new dependencies without clear need.
 
+## Analysis Depth
+- When collaboration level is `High` or `Extra High`, perform deep analysis before editing.
+- Do not stop at first-order reasoning; check invariants, race/close paths, and edge cases.
+- State assumptions explicitly and verify them against code before implementation.
+
 ## Fast Start
 - Format: `make fmt`
 - Unit tests: `make test`
@@ -43,3 +48,4 @@
 - Do not use staging/cherry-pick style split workflows unless explicitly requested.
 - Preserve behavior unless an explicit behavior change is approved.
 - For concurrent close/error paths, default to first-wins semantics unless explicitly changed.
+- When refactoring a proposed solution, re-scan pending changes and remove code that is no longer relevant.
