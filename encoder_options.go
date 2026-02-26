@@ -1,6 +1,7 @@
 package pbf
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -13,6 +14,13 @@ const (
 	DefaultBlobCompression = encoder.ZLIB
 
 	tempFileName = "entities.pbf"
+)
+
+var (
+	// ErrCreateTempDir is returned when the encoder cannot create a temporary directory.
+	ErrCreateTempDir = errors.New("create temporary directory")
+	// ErrCreateTempFile is returned when the encoder cannot create a temporary file.
+	ErrCreateTempFile = errors.New("create temporary file")
 )
 
 // encoderOptions provides optional configuration parameters for Encoder construction.
@@ -109,19 +117,21 @@ var defaultEncoderConfig = encoderOptions{
 
 // initializeTempStore initializes the temporary file that entities are stored
 // before being copied, after the header, to the io.Writer passed to the encoder.
-func initializeTempStore(o *encoderOptions) {
+func initializeTempStore(o *encoderOptions) error {
 	if o.store == "" {
 		tmpdir, err := os.MkdirTemp("", "pbf")
 		if err != nil {
-			panic(fmt.Errorf("cannot create temporary directory: %w", err))
+			return fmt.Errorf("%w: %w", ErrCreateTempDir, err)
 		}
 
 		o.store = tmpdir
 	}
 
 	if wrtr, err := os.Create(path.Join(o.store, tempFileName)); err != nil {
-		panic(fmt.Errorf("cannot create temporary file %s: %w", path.Join(o.store, tempFileName), err))
+		return fmt.Errorf("%w %s: %w", ErrCreateTempFile, path.Join(o.store, tempFileName), err)
 	} else {
 		o.wrtr = wrtr
 	}
+
+	return nil
 }

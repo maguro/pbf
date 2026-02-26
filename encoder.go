@@ -53,10 +53,12 @@ type Encoder struct {
 func NewEncoder(wrtr io.Writer, opts ...EncoderOption) (*Encoder, error) {
 	cfg := defaultEncoderConfig
 
-	opts = append(opts, initializeTempStore)
-
 	for _, opt := range opts {
 		opt(&cfg)
+	}
+
+	if err := initializeTempStore(&cfg); err != nil {
+		return nil, err
 	}
 
 	e := &Encoder{
