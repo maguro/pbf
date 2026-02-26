@@ -9,11 +9,27 @@ OpenStreetMap PBF golang encoder/decoder
 
 A golang based OpenStreetMap PBF encoder/decoder with a handy command line utility, `pbf`.
 
+## Development
+
+This repository includes a Codex-friendly workflow:
+
+    $ make fmt
+    $ make test
+    $ make test-race
+    $ make test-integration
+    $ make lint
+    $ make verify
+
+Project-specific agent guidance is documented in `AGENTS.md`.
+The Makefile uses a project-local `.cache/` directory for Go and lint caches to
+keep local and sandboxed runs reproducible; `.cache/` is intentionally ignored
+by git.
+
 ## pbf Command Line Utility
 
 The `pbf` CLI can be installed using the `go install` command:
 
-    $ go install m4o.io/pbf/cmd/pbf
+    $ go install m4o.io/pbf/v2/cmd/pbf
 
 ### pbf info
 

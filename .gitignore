@@ -25,3 +25,6 @@ pbf
 
 # codecov
 coverage.txt
+
+# Local build/lint caches used by Makefile targets.
+.cache/
