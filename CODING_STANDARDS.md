@@ -1,11 +1,11 @@
 # CODING_STANDARDS.md
 
 ## Scope and Review
-- Make one focused change at a time.
+- Keep each change to one concrete fix (or one directly required refactor).
+- Do not combine multiple fixes in one change, even when they share a goal.
+- Keep diffs small enough to review end-to-end in a single pass.
+- Keep commit boundaries aligned with that single concrete fix.
 - Stop after each change for review before continuing.
-- Do not bundle unrelated edits.
-- Keep commit boundaries aligned with a single purpose.
-- Do not split changes via staging/cherry-pick workflows unless explicitly requested.
 
 ## Behavior and Compatibility
 - Preserve existing behavior unless a behavior change is explicitly approved.
