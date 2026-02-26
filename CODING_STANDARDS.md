@@ -34,3 +34,10 @@
 - Keep `internal/` package boundaries explicit and non-public.
 - For unexported constructors/helpers, assume callers uphold internal contracts.
 - Do not add defensive branches for impossible internal states guaranteed by public entrypoints.
+
+## Documentation and Comments
+- Document all exported types, funcs, vars, and consts with Go doc comments.
+- Document exported interface methods with concise behavior contracts
+  (inputs, outputs/errors, lifecycle/concurrency semantics as applicable).
+- For non-obvious behavior (concurrency, ownership, lifecycle, invariants), add concise comments at the point of use.
+- Do not add comments that only restate obvious code.
