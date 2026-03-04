@@ -112,9 +112,10 @@ func ToDegrees(offset int64, granularity int32, coordinate int64) Degrees {
 // ToCoordinate converts Degrees to a nano-degrees coordinate, given the offset
 // and granularity of the desired coordinate.
 func ToCoordinate(offset int64, granularity int32, degrees Degrees) int64 {
-	shifted := degrees.Coordinate() - offset
+	shifted := float64(degrees) * coordinatesPerDegree
+	coordinate := (shifted - float64(offset)) / float64(granularity)
 
-	return shifted / int64(granularity)
+	return int64(math.Round(coordinate))
 }
 
 // round returns the value rounded to nearest as an int32.

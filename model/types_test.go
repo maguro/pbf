@@ -56,3 +56,76 @@ func TestDegreesEqualWithin(t *testing.T) {
 func TestDegreesString(t *testing.T) {
 	assert.Equal(t, "53° 7' 24.42\"", model.Degrees(53.123450).String())
 }
+
+func TestCoordinateRoundTripWithGranularity(t *testing.T) {
+	const (
+		offset      int64 = 0
+		granularity int32 = 100
+		coordinate  int64 = -1374389532
+	)
+
+	degrees := model.ToDegrees(offset, granularity, coordinate)
+	roundTripped := model.ToCoordinate(offset, granularity, degrees)
+
+	assert.Equal(t, coordinate, roundTripped)
+}
+
+func TestCoordinateRoundTripMatrix(t *testing.T) {
+	testCases := []struct {
+		name        string
+		offset      int64
+		granularity int32
+		coordinates []int64
+	}{
+		{
+			name:        "zero-offset-granularity-100",
+			offset:      0,
+			granularity: 100,
+			coordinates: []int64{-1_800_000_000, -1_374_389_532, -1, 0, 1, 1_374_389_532, 1_800_000_000},
+		},
+		{
+			name:        "zero-offset-granularity-1000",
+			offset:      0,
+			granularity: 1000,
+			coordinates: []int64{-180_000_000, -42_123_456, -1, 0, 1, 42_123_456, 180_000_000},
+		},
+		{
+			name:        "positive-offset-granularity-100",
+			offset:      1_234_500,
+			granularity: 100,
+			coordinates: []int64{-10_000_000, -123_456, 0, 123_456, 10_000_000},
+		},
+		{
+			name:        "negative-offset-granularity-100",
+			offset:      -9_876_500,
+			granularity: 100,
+			coordinates: []int64{-10_000_000, -123_456, 0, 123_456, 10_000_000},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, coordinate := range tc.coordinates {
+				degrees := model.ToDegrees(tc.offset, tc.granularity, coordinate)
+				roundTripped := model.ToCoordinate(tc.offset, tc.granularity, degrees)
+				assert.Equal(t, coordinate, roundTripped, "coordinate=%d", coordinate)
+			}
+		})
+	}
+}
+
+func TestCoordinateRoundTripRange(t *testing.T) {
+	const (
+		offset      int64 = 0
+		granularity int32 = 100
+		start       int64 = -1_800_000_000
+		end         int64 = 1_800_000_000
+		step        int64 = 131_071
+	)
+
+	for coordinate := start; coordinate <= end; coordinate += step {
+		degrees := model.ToDegrees(offset, granularity, coordinate)
+		roundTripped := model.ToCoordinate(offset, granularity, degrees)
+		assert.Equal(t, coordinate, roundTripped, "coordinate=%d", coordinate)
+	}
+}
