@@ -16,6 +16,8 @@ package pbf
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"time"
 
@@ -24,6 +26,10 @@ import (
 	"m4o.io/pbf/v2/internal/decoder"
 	"m4o.io/pbf/v2/model"
 )
+
+// ErrUnsupportedRequiredFeature is returned when a PBF header contains a required feature
+// that this decoder does not support.
+var ErrUnsupportedRequiredFeature = errors.New("unsupported required feature")
 
 // Decoder reads and decodes OpenStreetMap PBF data from an input stream.
 type Decoder struct {
@@ -47,6 +53,12 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 	if hdr, err := decoder.LoadHeader(rdr); err != nil {
 		return nil, err
 	} else {
+		for _, feature := range hdr.RequiredFeatures {
+			if !isSupportedRequiredFeature(feature) {
+				return nil, fmt.Errorf("%w: %s", ErrUnsupportedRequiredFeature, feature)
+			}
+		}
+
 		d.Header = hdr
 	}
 
@@ -78,4 +90,13 @@ func (d *Decoder) Decode() ([]model.Entity, error) {
 func (d *Decoder) Close() {
 	d.cancel()
 	rill.DrainNB(d.Entities)
+}
+
+func isSupportedRequiredFeature(feature string) bool {
+	switch feature {
+	case "OsmSchema-V0.6", "DenseNodes", "HistoricalInformation":
+		return true
+	default:
+		return false
+	}
 }

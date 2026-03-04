@@ -15,6 +15,7 @@
 package pbf
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -29,6 +30,25 @@ import (
 
 func TestDecodeSample(t *testing.T) {
 	publicDecodeOsmPbf(t, "testdata/sample.osm.pbf", 339)
+}
+
+func TestNewDecoderFailsOnUnknownRequiredFeature(t *testing.T) {
+	var encoded bytes.Buffer
+
+	enc, err := NewEncoder(&encoded, WithRequiredFeatures("Unknown-Feature-X"))
+	if err != nil {
+		t.Fatalf("create encoder: %v", err)
+	}
+	enc.Close()
+
+	dec, err := NewDecoder(context.Background(), bytes.NewReader(encoded.Bytes()))
+	if err == nil {
+		dec.Close()
+		t.Fatal("expected NewDecoder to fail on unknown required feature")
+	}
+	if !errors.Is(err, ErrUnsupportedRequiredFeature) {
+		t.Fatalf("expected ErrUnsupportedRequiredFeature, got: %v", err)
+	}
 }
 
 func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
