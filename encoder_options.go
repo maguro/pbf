@@ -113,6 +113,11 @@ func WithOsmosisReplicationBaseURL(url string) EncoderOption {
 // defaultEncoderConfig provides a default configuration for encoders.
 var defaultEncoderConfig = encoderOptions{
 	compression: DefaultBlobCompression,
+	requiredFeatures: []string{
+		"OsmSchema-V0.6",
+		"DenseNodes",
+		"HistoricalInformation",
+	},
 }
 
 // initializeTempStore initializes the temporary file that entities are stored
