@@ -13,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
-	github.com/ulikunitz/xz v0.5.12
+	github.com/ulikunitz/xz v0.5.14
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/cheggaaa/pb.v1 v1.0.28
