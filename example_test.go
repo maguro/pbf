@@ -1,5 +1,5 @@
-//go:build example
-// +build example
+//go:build integration
+// +build integration
 
 // Copyright 2017-25 the original author or authors.
 //
@@ -19,6 +19,7 @@ package pbf_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,25 +49,27 @@ func Example() {
 
 done:
 	for {
-		v, err := d.Decode()
+		entities, err := d.Decode()
 		switch {
 		case errors.Is(err, io.EOF):
 			break done
 		case err != nil:
 			panic(err.Error())
 		default:
-			switch v := v.(type) {
-			case *model.Node:
-				// Process Node v.
-				nc++
-			case *model.Way:
-				// Process Way v.
-				wc++
-			case *model.Relation:
-				// Process Relation v.
-				rc++
-			default:
-				panic(fmt.Sprintf("unknown type %T\n", v))
+			for _, v := range entities {
+				switch v := v.(type) {
+				case *model.Node:
+					// Process Node v.
+					nc++
+				case *model.Way:
+					// Process Way v.
+					wc++
+				case *model.Relation:
+					// Process Relation v.
+					rc++
+				default:
+					panic(fmt.Sprintf("unknown type %T\n", v))
+				}
 			}
 		}
 	}
