@@ -1,0 +1,37 @@
+name: Refresh Context7 Docs
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '**.md'
+      - context7.json
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  refresh:
+    if: github.repository == 'maguro/pbf'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger Context7 refresh
+        env:
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+        run: |
+          status=$(curl -sS -o response.json -w '%{http_code}' -X POST https://context7.com/api/v1/refresh \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${CONTEXT7_API_KEY}" \
+            -d '{"libraryName": "/${{ github.repository }}"}')
+          cat response.json
+          echo
+          if [ "$status" -lt 400 ]; then
+            exit 0
+          fi
+          # Context7 limits how often a library can refresh. Skipping is not a failure.
+          if jq -e '.error == "too-early"' response.json >/dev/null; then
+            echo "::warning title=Context7 refresh skipped::The last refresh was too recent. Run this workflow manually after the limit expires."
+            exit 0
+          fi
+          exit 1
