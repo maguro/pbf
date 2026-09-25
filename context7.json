@@ -2,7 +2,7 @@
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "pbf",
   "description": "Go encoder and decoder for OpenStreetMap PBF files, with the pbf CLI",
-  "excludeFiles": ["AGENTS.md", "CODING_STANDARDS.md", "specifications.md"],
+  "excludeFiles": ["AGENTS.md", "CODING_STANDARDS.md", "CONTRIBUTING.md", "specifications.md"],
   "rules": [
     "Import the module as m4o.io/pbf/v2. github.com/maguro/pbf is not an import path.",
     "Decoder.Decode returns a batch ([]model.Entity). Loop until it returns io.EOF, and always call Decoder.Close.",
