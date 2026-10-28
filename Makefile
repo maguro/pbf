@@ -4,12 +4,15 @@ ROOT_DIR := $(CURDIR)
 GOCACHE ?= $(ROOT_DIR)/.cache/go-build
 GOMODCACHE ?= $(ROOT_DIR)/.cache/go-mod
 GOLANGCI_LINT_CACHE ?= $(ROOT_DIR)/.cache/golangci-lint
+BENCHSTAT_VERSION := v0.0.0-20261009192801-be2c69fb417e
+BENCHSTAT_BIN := $(ROOT_DIR)/.cache/bin/benchstat-$(BENCHSTAT_VERSION)
+BENCHSTAT := $(BENCHSTAT_BIN)/benchstat
 export GOCACHE
 export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt test test-race test-integration bench lint tidy build verify
+.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint tidy build verify
 
 help:
 	@echo "Available targets:"
@@ -18,7 +21,8 @@ help:
 	@echo "  test             - Run unit tests"
 	@echo "  test-race        - Run race-enabled tests"
 	@echo "  test-integration - Run integration tests"
-	@echo "  bench            - Run benchmarks five times with allocation stats"
+	@echo "  bench            - Run benchmarks ten times with allocation stats"
+	@echo "  bench-compare    - Compare two bench outputs: OLD=before.txt NEW=after.txt"
 	@echo "  lint             - Run golangci-lint"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
@@ -51,7 +55,15 @@ test-integration:
 
 bench:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
-	$(GO) test -run '^$$' -bench . -benchmem -count=5 $(PKGS)
+	$(GO) test -run '^$$' -bench . -benchmem -count=10 $(PKGS)
+
+$(BENCHSTAT):
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	GOBIN="$(BENCHSTAT_BIN)" $(GO) install golang.org/x/perf/cmd/benchstat@$(BENCHSTAT_VERSION)
+
+bench-compare: $(BENCHSTAT)
+	@test -n "$(OLD)" -a -n "$(NEW)" || { echo "usage: make bench-compare OLD=before.txt NEW=after.txt"; exit 1; }
+	$(BENCHSTAT) "$(OLD)" "$(NEW)"
 
 lint:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
