@@ -60,8 +60,6 @@ type Node struct {
 
 var _ Entity = Node{}
 
-func (r Node) isEntity() {}
-
 func (r Node) GetID() ID {
 	return r.ID
 }
@@ -74,6 +72,8 @@ func (r Node) GetInfo() *Info {
 	return r.Info
 }
 
+func (r Node) isEntity() {}
+
 // Way is an ordered list of between 2 and 2,000 nodes that define a polyline.
 type Way struct {
 	ID      ID
@@ -83,8 +83,6 @@ type Way struct {
 }
 
 var _ Entity = Way{}
-
-func (w Way) isEntity() {}
 
 func (w Way) GetID() ID {
 	return w.ID
@@ -97,6 +95,8 @@ func (w Way) GetTags() map[string]string {
 func (w Way) GetInfo() *Info {
 	return w.Info
 }
+
+func (w Way) isEntity() {}
 
 // EntityType is an enumeration of PBF entity types.
 type EntityType int32
@@ -130,8 +130,6 @@ type Relation struct {
 
 var _ Entity = Relation{}
 
-func (r Relation) isEntity() {}
-
 func (r Relation) GetID() ID {
 	return r.ID
 }
@@ -143,3 +141,5 @@ func (r Relation) GetTags() map[string]string {
 func (r Relation) GetInfo() *Info {
 	return r.Info
 }
+
+func (r Relation) isEntity() {}
