@@ -10,7 +10,7 @@
 - Primary goals: stable PBF encoder/decoder library and `pbf` CLI
 
 ## Environment
-- Preferred Go version: `1.23.x` (see `go.mod` toolchain)
+- Preferred Go version: `1.24.x` (see `go.mod`)
 - OS support: macOS, Linux, Windows
 
 ## Working Agreement
