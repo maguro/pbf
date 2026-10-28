@@ -83,10 +83,11 @@ func newBlockContext(entities []model.Entity) *blockContext {
 	for _, e := range entities {
 		extractTagsAndInfo(strings, e)
 
-		if r, ok := e.(*model.Relation); ok {
-			extractMemberRoles(strings, r)
-		} else if n, ok := e.(*model.Node); ok {
-			strings.Add(n.GetInfo().User)
+		switch v := e.(type) {
+		case *model.Relation:
+			extractMemberRoles(strings, v)
+		case *model.Node:
+			strings.Add(v.GetInfo().User)
 		}
 	}
 
@@ -141,33 +142,36 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 	keyValIDs := make([]int32, 0)
 
 	for _, e := range bc.entities {
-		if n, ok := e.(*model.Node); ok {
-			ids = append(ids, int64(n.ID))
-
-			lat := n.Lat
-			lon := n.Lon
-
-			bc.bbox.ExpandWithLatLng(lat, lon)
-
-			lats = append(lats, model.ToCoordinate(LatOffset, Granularity, lat))
-			lons = append(lons, model.ToCoordinate(LonOffset, Granularity, lon))
-
-			info := n.GetInfo()
-			versions = append(versions, info.Version)
-			uids = append(uids, int32(info.UID))
-			ts = append(ts, fromTimestamp(DateGranularityMs, info.Timestamp))
-			cs = append(cs, info.Changeset)
-			usids = append(usids, bc.table.IndexOf(info.User))
-			visible = append(visible, info.Visible)
-
-			kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
-			for i, k := range kIDs {
-				keyValIDs = append(keyValIDs, int32(k))
-				keyValIDs = append(keyValIDs, int32(vIDs[i]))
-			}
-
-			keyValIDs = append(keyValIDs, 0)
+		n, ok := e.(*model.Node)
+		if !ok {
+			continue
 		}
+
+		ids = append(ids, int64(n.ID))
+
+		lat := n.Lat
+		lon := n.Lon
+
+		bc.bbox.ExpandWithLatLng(lat, lon)
+
+		lats = append(lats, model.ToCoordinate(LatOffset, Granularity, lat))
+		lons = append(lons, model.ToCoordinate(LonOffset, Granularity, lon))
+
+		info := n.GetInfo()
+		versions = append(versions, info.Version)
+		uids = append(uids, int32(info.UID))
+		ts = append(ts, fromTimestamp(DateGranularityMs, info.Timestamp))
+		cs = append(cs, info.Changeset)
+		usids = append(usids, bc.table.IndexOf(info.User))
+		visible = append(visible, info.Visible)
+
+		kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
+		for i, k := range kIDs {
+			keyValIDs = append(keyValIDs, int32(k))
+			keyValIDs = append(keyValIDs, int32(vIDs[i]))
+		}
+
+		keyValIDs = append(keyValIDs, 0)
 	}
 
 	dn.Id = calcDeltas(ids)
@@ -190,25 +194,28 @@ func (bc *blockContext) extractWays() []*pb.Way {
 	var ways []*pb.Way
 
 	for _, e := range bc.entities {
-		if w, ok := e.(*model.Way); ok {
-			var refs []int64
-
-			for _, r := range w.NodeIDs {
-				refs = append(refs, int64(r))
-			}
-
-			keyIDs, valIDs := calcTagIDs(w.Tags, bc.table)
-
-			way := &pb.Way{
-				Id:   proto.Int64(int64(w.ID)),
-				Keys: keyIDs,
-				Vals: valIDs,
-				Info: toInfoPb(w.Info, bc.table),
-				Refs: calcDeltas(refs),
-			}
-
-			ways = append(ways, way)
+		w, ok := e.(*model.Way)
+		if !ok {
+			continue
 		}
+
+		var refs []int64
+
+		for _, r := range w.NodeIDs {
+			refs = append(refs, int64(r))
+		}
+
+		keyIDs, valIDs := calcTagIDs(w.Tags, bc.table)
+
+		way := &pb.Way{
+			Id:   proto.Int64(int64(w.ID)),
+			Keys: keyIDs,
+			Vals: valIDs,
+			Info: toInfoPb(w.Info, bc.table),
+			Refs: calcDeltas(refs),
+		}
+
+		ways = append(ways, way)
 	}
 
 	return ways
@@ -218,30 +225,33 @@ func (bc *blockContext) extractRelations() []*pb.Relation {
 	var relations []*pb.Relation
 
 	for _, e := range bc.entities {
-		if r, ok := e.(*model.Relation); ok {
-			keyIDs, valIDs := calcTagIDs(r.Tags, bc.table)
-			memids := make([]int64, len(r.Members))
-			roleids := make([]int32, len(r.Members))
-			types := make([]pb.Relation_MemberType, len(r.Members))
-
-			for i, m := range r.Members {
-				memids[i] = int64(m.ID)
-				roleids[i] = bc.table.IndexOf(m.Role)
-				types[i] = pb.Relation_MemberType(m.Type)
-			}
-
-			relation := &pb.Relation{
-				Id:       proto.Int64(int64(r.ID)),
-				Keys:     keyIDs,
-				Vals:     valIDs,
-				Info:     toInfoPb(r.Info, bc.table),
-				RolesSid: roleids,
-				Memids:   calcDeltas(memids),
-				Types:    types,
-			}
-
-			relations = append(relations, relation)
+		r, ok := e.(*model.Relation)
+		if !ok {
+			continue
 		}
+
+		keyIDs, valIDs := calcTagIDs(r.Tags, bc.table)
+		memids := make([]int64, len(r.Members))
+		roleids := make([]int32, len(r.Members))
+		types := make([]pb.Relation_MemberType, len(r.Members))
+
+		for i, m := range r.Members {
+			memids[i] = int64(m.ID)
+			roleids[i] = bc.table.IndexOf(m.Role)
+			types[i] = pb.Relation_MemberType(m.Type)
+		}
+
+		relation := &pb.Relation{
+			Id:       proto.Int64(int64(r.ID)),
+			Keys:     keyIDs,
+			Vals:     valIDs,
+			Info:     toInfoPb(r.Info, bc.table),
+			RolesSid: roleids,
+			Memids:   calcDeltas(memids),
+			Types:    types,
+		}
+
+		relations = append(relations, relation)
 	}
 
 	return relations
