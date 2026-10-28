@@ -279,7 +279,7 @@ func calcDeltas[T interface {
 	return deltas
 }
 
-func calcTagIDs(tags map[string]string, table *Table) (keyIDs []uint32, valIDs []uint32) {
+func calcTagIDs(tags map[string]string, table *Table) (keyIDs, valIDs []uint32) {
 	keys := make([]string, 0, len(tags))
 
 	for k := range tags {

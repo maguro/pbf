@@ -309,6 +309,6 @@ func decodeMemberType(mt pb.Relation_MemberType) model.EntityType {
 
 // toTimestamp converts a timestamp with a specific granularity, in units of
 // milliseconds, to a UTC timestamp of type Time.
-func toTimestamp(granularity int32, timestamp int32) time.Time {
+func toTimestamp(granularity, timestamp int32) time.Time {
 	return time.UnixMilli(int64(timestamp) * int64(granularity)).UTC()
 }

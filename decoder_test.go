@@ -82,7 +82,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 			assert.NotEqual(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(obj))
 		}
 
-		nEntries = nEntries + len(objs)
+		nEntries += len(objs)
 	}
 
 	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of entities")

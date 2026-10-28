@@ -30,7 +30,7 @@ func TestRunInfo(t *testing.T) {
 	testRunInfoWith(t, false, 0, 0, 0)
 }
 
-func testRunInfoWith(t *testing.T, extended bool, node int64, way int64, relation int64) {
+func testRunInfoWith(t *testing.T, extended bool, node, way, relation int64) {
 	f, err := os.Open("../../../testdata/greater-london.osm.pbf")
 	if err != nil {
 		t.Fatalf("Unable to read data file %v", err)
