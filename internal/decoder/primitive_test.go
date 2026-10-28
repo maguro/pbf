@@ -131,6 +131,29 @@ func TestParsePrimitiveBlockDecodesTimestampsAfter2038(t *testing.T) {
 	}
 }
 
+// TestParsePrimitiveBlockSkipsChangeSets decodes a group that has a ChangeSet
+// next to a node. The decoder does not return change sets.
+func TestParsePrimitiveBlockSkipsChangeSets(t *testing.T) {
+	group := message(
+		field(1, message( // nodes
+			varint(1, protowire.EncodeZigZag(42)), // id
+			varint(8, 0),                          // lat
+			varint(9, 0),                          // lon
+		)),
+		field(5, varint(1, 7)), // changesets.id
+	)
+	block := message(
+		field(1, field(1, nil)), // stringtable with the empty string
+		field(2, group),         // primitivegroup
+	)
+
+	entities, err := parsePrimitiveBlock(block)
+	require.NoError(t, err)
+	require.Len(t, entities, 1)
+
+	assert.Equal(t, model.ID(42), entities[0].GetID())
+}
+
 func message(fields ...[]byte) []byte {
 	var b []byte
 	for _, f := range fields {

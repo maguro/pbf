@@ -312,7 +312,7 @@ func toInfoPb(info *model.Info, table *Table) *pb.Info {
 		Timestamp: proto.Int64(fromTimestamp(DateGranularityMs, info.Timestamp)),
 		Changeset: proto.Int64(info.Changeset),
 		Uid:       proto.Int32(int32(info.UID)),
-		UserSid:   proto.Int32(table.IndexOf(info.User)),
+		UserSid:   proto.Uint32(uint32(table.IndexOf(info.User))),
 		Visible:   proto.Bool(info.Visible),
 	}
 

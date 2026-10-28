@@ -120,6 +120,9 @@ message HeaderBBox
 
 message StringTable
 {
+    // The canonical osmformat.proto declares s as bytes. A string field has
+    // the same wire format, and protobuf-go does not check UTF-8 in a proto2
+    // string field, so s accepts the same data as bytes.
     repeated string s = 1;
 }
 
@@ -149,7 +152,7 @@ message PrimitiveGroup
     optional DenseNodes dense = 2;
     repeated Way      ways = 3;
     repeated Relation relations = 4;
-    //  repeated ChangeSet changesets = 5;
+    repeated ChangeSet changesets = 5;
 }
 
 message Info
@@ -158,7 +161,7 @@ message Info
     optional int64 timestamp = 2;
     optional int64 changeset = 3;
     optional int32 uid = 4;
-    optional int32 user_sid = 5; // String IDs
+    optional uint32 user_sid = 5; // String IDs
 
     // The visible flag is used to store history information. It indicates that
     // the current object version has been created by a delete operation on the
@@ -169,6 +172,12 @@ message Info
     // true if the file has the required_features tag "HistoricalInformation"
     // set.
     optional bool visible = 6;
+}
+
+// This is kept for backwards compatibility but not used anywhere.
+message ChangeSet
+{
+    required int64 id = 1;
 }
 
 message Node
