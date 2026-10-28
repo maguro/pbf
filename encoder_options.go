@@ -131,11 +131,12 @@ func initializeTempStore(o *encoderOptions) error {
 		o.store = tmpdir
 	}
 
-	if wrtr, err := os.Create(path.Join(o.store, tempFileName)); err != nil {
+	wrtr, err := os.Create(path.Join(o.store, tempFileName))
+	if err != nil {
 		return fmt.Errorf("%w %s: %w", ErrCreateTempFile, path.Join(o.store, tempFileName), err)
-	} else {
-		o.wrtr = wrtr
 	}
+
+	o.wrtr = wrtr
 
 	return nil
 }

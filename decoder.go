@@ -50,17 +50,18 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 
 	ctx, d.cancel = context.WithCancel(ctx)
 
-	if hdr, err := decoder.LoadHeader(rdr); err != nil {
+	hdr, err := decoder.LoadHeader(rdr)
+	if err != nil {
 		return nil, err
-	} else {
-		for _, feature := range hdr.RequiredFeatures {
-			if !isSupportedRequiredFeature(feature) {
-				return nil, fmt.Errorf("%w: %s", ErrUnsupportedRequiredFeature, feature)
-			}
-		}
-
-		d.Header = hdr
 	}
+
+	for _, feature := range hdr.RequiredFeatures {
+		if !isSupportedRequiredFeature(feature) {
+			return nil, fmt.Errorf("%w: %s", ErrUnsupportedRequiredFeature, feature)
+		}
+	}
+
+	d.Header = hdr
 
 	blobs := rill.FromSeq2(decoder.GenerateBlobReader(ctx, rdr))
 
