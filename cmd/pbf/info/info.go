@@ -62,7 +62,6 @@ func init() { //nolint:gochecknoinits
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print information about an OSM file",
-	Long:  "Print information about an OSM file",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := cmd.Flags()
