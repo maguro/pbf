@@ -51,13 +51,13 @@ type blockContext struct {
 	dateGranularity int32
 }
 
-func newBlockContext(pb *pb.PrimitiveBlock) *blockContext {
+func newBlockContext(block *pb.PrimitiveBlock) *blockContext {
 	return &blockContext{
-		strings:         pb.GetStringtable().GetS(),
-		granularity:     pb.GetGranularity(),
-		latOffset:       pb.GetLatOffset(),
-		lonOffset:       pb.GetLonOffset(),
-		dateGranularity: pb.GetDateGranularity(),
+		strings:         block.GetStringtable().GetS(),
+		granularity:     block.GetGranularity(),
+		latOffset:       block.GetLatOffset(),
+		lonOffset:       block.GetLonOffset(),
+		dateGranularity: block.GetDateGranularity(),
 	}
 }
 

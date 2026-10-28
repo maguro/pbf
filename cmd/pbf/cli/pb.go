@@ -58,20 +58,20 @@ func WrapInputFile(f *os.File) (io.ReadCloser, error) {
 }
 
 // Read implements io.Reader.Read by simple delegation.
-func (pb progressBar) Read(p []byte) (int, error) {
-	return pb.r.Read(p)
+func (b progressBar) Read(p []byte) (int, error) {
+	return b.r.Read(p)
 }
 
 // Close implements io.Closer.Close by closing the delegate instance of
 // ReadCloser as well as clearing the terminal line of progress output.
-func (pb progressBar) Close() error {
+func (b progressBar) Close() error {
 	// make sure newline is not printed by Finish()
-	pb.bar.Output = nil
-	pb.bar.NotPrint = true
+	b.bar.Output = nil
+	b.bar.NotPrint = true
 
-	pb.bar.Finish()
+	b.bar.Finish()
 
 	fmt.Fprintf(os.Stderr, "\033[2K\r") // clear status bar
 
-	return pb.r.Close()
+	return b.r.Close()
 }

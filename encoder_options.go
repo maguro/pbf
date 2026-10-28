@@ -51,9 +51,9 @@ func WithCompression(compression encoder.BlobCompression) EncoderOption {
 }
 
 // WithStorePath lets you specify where to temporarily store entities.
-func WithStorePath(path string) EncoderOption {
+func WithStorePath(dir string) EncoderOption {
 	return func(o *encoderOptions) {
-		o.store = path
+		o.store = dir
 	}
 }
 
