@@ -22,9 +22,11 @@ import (
 	"runtime/trace"
 	"strconv"
 	"testing"
+
+	"m4o.io/pbf/v2/model"
 )
 
-func BenchmarkLondon(b *testing.B) {
+func BenchmarkDecodeLondon(b *testing.B) {
 	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
 		b.Fatalf("Error reading file: %v", err)
@@ -76,5 +78,53 @@ func BenchmarkLondon(b *testing.B) {
 		}
 
 		decoder.Close()
+	}
+}
+
+func BenchmarkEncodeLondon(b *testing.B) {
+	in, err := os.Open("testdata/greater-london.osm.pbf")
+	if err != nil {
+		b.Fatalf("Error reading file: %v", err)
+	}
+
+	defer in.Close()
+
+	decoder, err := NewDecoder(context.Background(), in)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	var entities []model.Entity
+
+	for {
+		batch, err := decoder.Decode()
+		if errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			decoder.Close()
+			b.Fatal(err)
+		}
+
+		entities = append(entities, batch...)
+	}
+
+	decoder.Close()
+
+	store := b.TempDir()
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		encoder, err := NewEncoder(io.Discard, WithStorePath(store))
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		if err := encoder.EncodeBatch(entities); err != nil {
+			encoder.Close()
+			b.Fatal(err)
+		}
+
+		encoder.Close()
 	}
 }
