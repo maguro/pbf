@@ -175,7 +175,7 @@ func (e *Encoder) writeHeaderAndBody() {
 		panic("cannot seek to beginning of file")
 	}
 
-	if err := encoder.SaveHeader(e.wrtr, e.Header, e.cfg.compression); err != nil {
+	if err := encoder.SaveHeader(e.wrtr, &e.Header, e.cfg.compression); err != nil {
 		panic(fmt.Sprintf("error writing header: %v", err))
 	}
 

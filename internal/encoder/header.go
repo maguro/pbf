@@ -24,7 +24,7 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-func SaveHeader(wrtr io.Writer, hdr model.Header, compression BlobCompression) error {
+func SaveHeader(wrtr io.Writer, hdr *model.Header, compression BlobCompression) error {
 	bbox := hdr.BoundingBox
 	hb := &pb.HeaderBlock{
 		Bbox: &pb.HeaderBBox{
