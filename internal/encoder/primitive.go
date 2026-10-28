@@ -48,7 +48,7 @@ func SaveBlock(w io.Writer, bb rill.Try[[]byte]) error {
 
 	hdr := &pb.BlobHeader{
 		Type:     proto.String("OSMData"),
-		Datasize: proto.Int32(int32(len(bb.Value))),
+		Datasize: proto.Int32(int32(len(bb.Value))), //nolint:gosec // The encoder does not check the 32 MiB blob limit. See maguro/pbf#11.
 	}
 
 	hb, err := proto.Marshal(hdr)
@@ -56,6 +56,7 @@ func SaveBlock(w io.Writer, bb rill.Try[[]byte]) error {
 		return fmt.Errorf("could not marshal blob header: %w", err)
 	}
 
+	//nolint:gosec // A BlobHeader is much smaller than the 64 KiB limit.
 	if err = binary.Write(w, binary.BigEndian, uint32(len(hb))); err != nil {
 		return fmt.Errorf("could not write header size: %w", err)
 	}
@@ -167,8 +168,8 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 
 		kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
 		for i, k := range kIDs {
-			keyValIDs = append(keyValIDs, int32(k))
-			keyValIDs = append(keyValIDs, int32(vIDs[i]))
+			keyValIDs = append(keyValIDs, int32(k))       //nolint:gosec // The value is a table index that IndexOf returned as an int32.
+			keyValIDs = append(keyValIDs, int32(vIDs[i])) //nolint:gosec // The value is a table index that IndexOf returned as an int32.
 		}
 
 		keyValIDs = append(keyValIDs, 0)
@@ -299,8 +300,8 @@ func calcTagIDs(tags map[string]string, table *Table) (keyIDs, valIDs []uint32) 
 	sort.Strings(keys)
 
 	for _, k := range keys {
-		keyIDs = append(keyIDs, uint32(table.IndexOf(k)))
-		valIDs = append(valIDs, uint32(table.IndexOf(tags[k])))
+		keyIDs = append(keyIDs, uint32(table.IndexOf(k)))       //nolint:gosec // IndexOf returns an index that is not negative.
+		valIDs = append(valIDs, uint32(table.IndexOf(tags[k]))) //nolint:gosec // IndexOf returns an index that is not negative.
 	}
 
 	return keyIDs, valIDs
@@ -312,7 +313,7 @@ func toInfoPb(info *model.Info, table *Table) *pb.Info {
 		Timestamp: proto.Int64(fromTimestamp(DateGranularityMs, info.Timestamp)),
 		Changeset: proto.Int64(info.Changeset),
 		Uid:       proto.Int32(int32(info.UID)),
-		UserSid:   proto.Uint32(uint32(table.IndexOf(info.User))),
+		UserSid:   proto.Uint32(uint32(table.IndexOf(info.User))), //nolint:gosec // IndexOf returns an index that is not negative.
 		Visible:   proto.Bool(info.Visible),
 	}
 

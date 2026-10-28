@@ -34,7 +34,7 @@ func writeBlob(wrtr io.Writer, msg proto.Message, c BlobCompression) (err error)
 
 	hdr := &pb.BlobHeader{
 		Type:     proto.String("OSMHeader"),
-		Datasize: proto.Int32(int32(len(bb))),
+		Datasize: proto.Int32(int32(len(bb))), //nolint:gosec // The encoder does not check the 32 MiB blob limit. See maguro/pbf#11.
 	}
 
 	hb, err := proto.Marshal(hdr)
@@ -42,6 +42,7 @@ func writeBlob(wrtr io.Writer, msg proto.Message, c BlobCompression) (err error)
 		return fmt.Errorf("could not marshal blob header: %w", err)
 	}
 
+	//nolint:gosec // A BlobHeader is much smaller than the 64 KiB limit.
 	if err = binary.Write(wrtr, binary.BigEndian, uint32(len(hb))); err != nil {
 		return fmt.Errorf("could not write header size: %w", err)
 	}

@@ -55,7 +55,7 @@ func Pack(msg proto.Message, c BlobCompression) (bb []byte, err error) {
 	}
 
 	blob := &pb.Blob{
-		RawSize: proto.Int32(int32(len(b))),
+		RawSize: proto.Int32(int32(len(b))), //nolint:gosec // The encoder does not check the 32 MiB blob limit. See maguro/pbf#11.
 	}
 
 	p.SaveTo(blob)
