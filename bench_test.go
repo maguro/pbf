@@ -27,7 +27,7 @@ import (
 func BenchmarkLondon(b *testing.B) {
 	in, err := os.Open("testdata/greater-london.osm.pbf")
 	if err != nil {
-		b.Errorf("Error reading file: %v", err)
+		b.Fatalf("Error reading file: %v", err)
 	}
 
 	defer in.Close()
@@ -44,26 +44,37 @@ func BenchmarkLondon(b *testing.B) {
 		}
 	}
 
-	pbs, _ := strconv.Atoi(os.Getenv("PBF_PROTO_BUFFER_SIZE"))
-	ncpu, _ := strconv.Atoi(os.Getenv("PBF_NCPU"))
+	var opts []DecoderOption
+
+	if pbs, err := strconv.Atoi(os.Getenv("PBF_PROTO_BUFFER_SIZE")); err == nil {
+		opts = append(opts, WithProtoBufferSize(pbs))
+	}
+
+	if ncpu, err := strconv.Atoi(os.Getenv("PBF_NCPU")); err == nil {
+		opts = append(opts, WithNCpus(uint16(ncpu)))
+	}
+
+	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
 		if _, err = in.Seek(0, 0); err != nil {
 			b.Fatal(err)
 		}
 
-		if decoder, err := NewDecoder(context.Background(), in,
-			WithProtoBufferSize(pbs),
-			WithNCpus(uint16(ncpu))); err != nil {
+		decoder, err := NewDecoder(context.Background(), in, opts...)
+		if err != nil {
 			b.Fatal(err)
-		} else {
-			for {
-				if _, err := decoder.Decode(); errors.Is(err, io.EOF) {
-					break
-				} else if err != nil {
-					b.Fatal(err)
-				}
+		}
+
+		for {
+			if _, err := decoder.Decode(); errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				decoder.Close()
+				b.Fatal(err)
 			}
 		}
+
+		decoder.Close()
 	}
 }
