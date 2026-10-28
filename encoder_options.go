@@ -113,9 +113,9 @@ func WithOsmosisReplicationBaseURL(url string) EncoderOption {
 var defaultEncoderConfig = encoderOptions{
 	compression: DefaultBlobCompression,
 	requiredFeatures: []string{
-		"OsmSchema-V0.6",
-		"DenseNodes",
-		"HistoricalInformation",
+		featureOSMSchema,
+		featureDenseNodes,
+		featureHistoricalInformation,
 	},
 }
 

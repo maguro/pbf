@@ -95,7 +95,7 @@ func (d *Decoder) Close() {
 
 func isSupportedRequiredFeature(feature string) bool {
 	switch feature {
-	case "OsmSchema-V0.6", "DenseNodes", "HistoricalInformation":
+	case featureOSMSchema, featureDenseNodes, featureHistoricalInformation:
 		return true
 	default:
 		return false
