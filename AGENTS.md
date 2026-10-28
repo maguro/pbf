@@ -49,3 +49,7 @@
 - Preserve behavior unless an explicit behavior change is approved.
 - For concurrent close/error paths, default to first-wins semantics unless explicitly changed.
 - When refactoring a proposed solution, re-scan pending changes and remove code that is no longer relevant.
+
+## Commits
+
+- Write commit messages as `.claude/skills/git-commit-message/SKILL.md` describes.
