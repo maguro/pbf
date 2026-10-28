@@ -39,8 +39,8 @@ func Coalesce(in <-chan []model.Entity, size int) <-chan rill.Try[[]model.Entity
 func ExtractBoundingBoxes(
 	in <-chan rill.Try[[]model.Entity],
 ) (
-	<-chan rill.Try[[]model.Entity],
-	<-chan rill.Try[*model.BoundingBox],
+	out <-chan rill.Try[[]model.Entity],
+	bboxes <-chan rill.Try[*model.BoundingBox],
 ) {
 	ech := make(chan rill.Try[[]model.Entity])
 	bch := make(chan rill.Try[*model.BoundingBox])
