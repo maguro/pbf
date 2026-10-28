@@ -9,7 +9,7 @@ export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt test test-race test-integration lint tidy build verify
+.PHONY: help doctor fmt test test-race test-integration bench lint tidy build verify
 
 help:
 	@echo "Available targets:"
@@ -18,6 +18,7 @@ help:
 	@echo "  test             - Run unit tests"
 	@echo "  test-race        - Run race-enabled tests"
 	@echo "  test-integration - Run integration tests"
+	@echo "  bench            - Run benchmarks five times with allocation stats"
 	@echo "  lint             - Run golangci-lint"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
@@ -47,6 +48,10 @@ test-race:
 test-integration:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	$(GO) test -v -tags=integration $(PKGS)
+
+bench:
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	$(GO) test -run '^$$' -bench . -benchmem -count=5 $(PKGS)
 
 lint:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"

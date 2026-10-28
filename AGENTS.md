@@ -29,6 +29,7 @@
 - Unit tests: `make test`
 - Race tests: `make test-race`
 - Integration tests: `make test-integration`
+- Benchmarks: `make bench`
 - Lint: `make lint`
 - Full local CI parity: `make verify`
 
@@ -41,6 +42,26 @@
 - Run `make verify`.
 - If behavior changes, add or update tests in the same change.
 - Keep README/docs in sync with user-facing CLI/library changes.
+
+## Benchmarks for changes on the decode and encode paths
+
+A change on the decode or encode path, that is `Decoder.Decode`,
+`Encoder.Encode`, `Encoder.EncodeBatch`, or a package they call for each
+blob or entity (`internal/decoder`, `internal/encoder`,
+`internal/encoder/packers`, `model`), is measured before and after the
+change, on the same machine in the same session:
+
+```sh
+make bench
+```
+
+Compare the medians. If no benchmark covers the path that changed, add one
+in the same change. A performance change is not done until the numbers show
+the gain. A correctness change on these paths reports its cost.
+
+The commit message states the result in a separate paragraph: allocations
+and bytes per op, rounded to three significant figures, and the names of
+the benchmarks that changed, with no time figures.
 
 ## Execution Defaults
 - Make one focused change at a time and stop for review.
