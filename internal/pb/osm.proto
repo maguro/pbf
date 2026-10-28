@@ -174,11 +174,11 @@ message Info
 message Node
 {
     required sint64 id = 1;
-    required sint64 lat = 7;
-    required sint64 lon = 8;
-    repeated uint32 keys = 9 [packed = true]; // Denote strings
-    repeated uint32 vals = 10 [packed = true];// Denote strings
-    optional Info info = 11; // Contains metadata
+    repeated uint32 keys = 2 [packed = true]; // Denote strings
+    repeated uint32 vals = 3 [packed = true]; // Denote strings
+    optional Info info = 4; // Contains metadata
+    required sint64 lat = 8;
+    required sint64 lon = 9;
 }
 
 message DenseNodes
