@@ -7,6 +7,8 @@ GOLANGCI_LINT_CACHE ?= $(ROOT_DIR)/.cache/golangci-lint
 BENCHSTAT_VERSION := v0.0.0-20261009192801-be2c69fb417e
 BENCHSTAT_BIN := $(ROOT_DIR)/.cache/bin/benchstat-$(BENCHSTAT_VERSION)
 BENCHSTAT := $(BENCHSTAT_BIN)/benchstat
+BASE ?= HEAD
+BENCH_COUNT ?= 10
 export GOCACHE
 export GOMODCACHE
 export GOLANGCI_LINT_CACHE
@@ -22,7 +24,7 @@ help:
 	@echo "  test-race        - Run race-enabled tests"
 	@echo "  test-integration - Run integration tests"
 	@echo "  bench            - Run benchmarks ten times with allocation stats"
-	@echo "  bench-compare    - Compare two bench outputs: OLD=before.txt NEW=after.txt"
+	@echo "  bench-compare    - Compare benchmarks of BASE (default HEAD) with the working tree"
 	@echo "  lint             - Run golangci-lint"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
@@ -55,15 +57,15 @@ test-integration:
 
 bench:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
-	$(GO) test -run '^$$' -bench . -benchmem -count=10 $(PKGS)
+	$(GO) test -run '^$$' -bench . -benchmem -count=$(BENCH_COUNT) $(PKGS)
 
 $(BENCHSTAT):
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	GOBIN="$(BENCHSTAT_BIN)" $(GO) install golang.org/x/perf/cmd/benchstat@$(BENCHSTAT_VERSION)
 
 bench-compare: $(BENCHSTAT)
-	@test -n "$(OLD)" -a -n "$(NEW)" || { echo "usage: make bench-compare OLD=before.txt NEW=after.txt"; exit 1; }
-	$(BENCHSTAT) "$(OLD)" "$(NEW)"
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	scripts/bench-compare.sh "$(BASE)" "$(BENCH_COUNT)" "$(BENCHSTAT)"
 
 lint:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"

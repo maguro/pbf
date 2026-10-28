@@ -30,7 +30,7 @@
 - Race tests: `make test-race`
 - Integration tests: `make test-integration`
 - Benchmarks: `make bench`
-- Benchmark comparison: `make bench-compare OLD=before.txt NEW=after.txt`
+- Benchmark comparison: `make bench-compare BASE=<commit>` (default `HEAD`)
 - Lint: `make lint`
 - Full local CI parity: `make verify`
 
@@ -61,10 +61,14 @@ alter the work done on the success path, such as an error message, error
 wrapping, a comment, or a rename, is not measured.
 
 ```sh
-make bench > before.txt   # without the change
-make bench > after.txt    # with the change
-make bench-compare OLD=before.txt NEW=after.txt
+make bench-compare             # HEAD against the working tree
+make bench-compare BASE=HEAD~1 # HEAD~1 against the working tree
 ```
+
+`bench-compare` alternates the base runs and the working-tree runs, one
+sample at a time. Do not compare two `make bench` outputs that ran one
+after the other. Drift of the machine during the first run makes a false
+difference in time.
 
 If no benchmark covers the path that changed, add one in the same change.
 A performance change is not done until the numbers show the gain. A
