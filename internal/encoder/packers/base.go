@@ -15,13 +15,11 @@
 package packers
 
 import (
-	"bytes"
 	"io"
 )
 
 type base struct {
-	w   io.WriteCloser
-	buf bytes.Buffer
+	w io.WriteCloser
 }
 
 func newBasePacker(w io.WriteCloser) *base {

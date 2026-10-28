@@ -26,7 +26,6 @@ var (
 // encoderOptions provides optional configuration parameters for Encoder construction.
 type encoderOptions struct {
 	compression encoder.BlobCompression
-	nCPU        uint16 // the number of CPUs to use for background processing
 
 	store string
 	wrtr  *os.File
