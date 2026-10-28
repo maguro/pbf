@@ -245,7 +245,7 @@ func (dic *denseInfoContext) decodeInfo(i int) *model.Info {
 	info := &model.Info{
 		Version:   dic.version,
 		UID:       dic.uid,
-		Timestamp: toTimestamp(dic.dateGranularity, int32(dic.timestamp)),
+		Timestamp: toTimestamp(dic.dateGranularity, dic.timestamp),
 		Changeset: dic.changeset,
 		User:      dic.strings[dic.userSid],
 	}
@@ -309,6 +309,6 @@ func decodeMemberType(mt pb.Relation_MemberType) model.EntityType {
 
 // toTimestamp converts a timestamp with a specific granularity, in units of
 // milliseconds, to a UTC timestamp of type Time.
-func toTimestamp(granularity, timestamp int32) time.Time {
-	return time.UnixMilli(int64(timestamp) * int64(granularity)).UTC()
+func toTimestamp(granularity int32, timestamp int64) time.Time {
+	return time.UnixMilli(timestamp * int64(granularity)).UTC()
 }

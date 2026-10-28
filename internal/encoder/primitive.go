@@ -309,7 +309,7 @@ func calcTagIDs(tags map[string]string, table *Table) (keyIDs, valIDs []uint32) 
 func toInfoPb(info *model.Info, table *Table) *pb.Info {
 	pbInfo := &pb.Info{
 		Version:   proto.Int32(info.Version),
-		Timestamp: proto.Int32(int32(info.Timestamp.UTC().UnixMilli() / DateGranularityMs)),
+		Timestamp: proto.Int64(fromTimestamp(DateGranularityMs, info.Timestamp)),
 		Changeset: proto.Int64(info.Changeset),
 		Uid:       proto.Int32(int32(info.UID)),
 		UserSid:   proto.Int32(table.IndexOf(info.User)),

@@ -16,6 +16,7 @@ package decoder
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,4 +75,97 @@ func TestParsePrimitiveBlockDecodesNonDenseNode(t *testing.T) {
 	assert.Equal(t, int32(3), n.Info.Version)
 	assert.InDelta(t, 51.5, float64(n.Lat), 1e-9)
 	assert.InDelta(t, -0.1, float64(n.Lon), 1e-9)
+}
+
+// TestParsePrimitiveBlockDecodesTimestampsAfter2038 uses a timestamp that is
+// larger than math.MaxInt32 seconds. The canonical osmformat.proto stores it
+// in an int64 field for Info and in a sint64 field for DenseInfo.
+func TestParsePrimitiveBlockDecodesTimestampsAfter2038(t *testing.T) {
+	const seconds = 3_000_000_000
+
+	want := time.Unix(seconds, 0).UTC()
+
+	tests := []struct {
+		name  string
+		group []byte
+	}{
+		{
+			name: "info of a node",
+			group: field(1, message( // nodes
+				varint(1, protowire.EncodeZigZag(42)), // id
+				field(4, varint(2, seconds)),          // info.timestamp
+				varint(8, 0),                          // lat
+				varint(9, 0),                          // lon
+			)),
+		},
+		{
+			name: "dense info of a dense node",
+			group: field(2, message( // dense
+				field(1, packedZigZag(42)), // id
+				field(5, message( // denseinfo
+					field(1, packedVarint(1)),       // version
+					field(2, packedZigZag(seconds)), // timestamp
+					field(3, packedZigZag(0)),       // changeset
+					field(4, packedZigZag(0)),       // uid
+					field(5, packedZigZag(0)),       // user_sid
+				)),
+				field(8, packedZigZag(0)), // lat
+				field(9, packedZigZag(0)), // lon
+			)),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			block := message(
+				field(1, field(1, nil)), // stringtable with the empty string
+				field(2, tc.group),      // primitivegroup
+			)
+
+			entities, err := parsePrimitiveBlock(block)
+			require.NoError(t, err)
+			require.Len(t, entities, 1)
+
+			assert.Equal(t, want, entities[0].GetInfo().Timestamp)
+		})
+	}
+}
+
+func message(fields ...[]byte) []byte {
+	var b []byte
+	for _, f := range fields {
+		b = append(b, f...)
+	}
+
+	return b
+}
+
+func field(num protowire.Number, value []byte) []byte {
+	b := protowire.AppendTag(nil, num, protowire.BytesType)
+
+	return protowire.AppendBytes(b, value)
+}
+
+func varint(num protowire.Number, value uint64) []byte {
+	b := protowire.AppendTag(nil, num, protowire.VarintType)
+
+	return protowire.AppendVarint(b, value)
+}
+
+func packedVarint(values ...uint64) []byte {
+	var b []byte
+	for _, v := range values {
+		b = protowire.AppendVarint(b, v)
+	}
+
+	return b
+}
+
+func packedZigZag(values ...int64) []byte {
+	var b []byte
+	for _, v := range values {
+		b = protowire.AppendVarint(b, protowire.EncodeZigZag(v))
+	}
+
+	return b
 }

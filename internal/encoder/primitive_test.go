@@ -48,3 +48,20 @@ func TestFromTimestamp(t *testing.T) {
 	assert.Equal(t, int64(1644784822), fromTimestamp(DateGranularityMs, ts))
 	assert.Equal(t, int64(1644784822), fromTimestamp(DateGranularityMs, ts.Local()))
 }
+
+// TestToInfoPbKeepsTimestampsAfter2038 uses a timestamp that is larger than
+// math.MaxInt32 seconds. The canonical osmformat.proto stores it in an int64
+// field.
+func TestToInfoPbKeepsTimestampsAfter2038(t *testing.T) {
+	const seconds = 3_000_000_000
+
+	strings := NewStrings()
+	strings.Add("")
+	table := strings.CalcTable()
+
+	info := &model.Info{Timestamp: time.Unix(seconds, 0)}
+
+	pbInfo := toInfoPb(info, table)
+
+	assert.Equal(t, int64(seconds), pbInfo.GetTimestamp())
+}
