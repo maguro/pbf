@@ -43,7 +43,7 @@ func Pack(msg proto.Message, c BlobCompression) (bb []byte, err error) {
 
 	b, err := proto.Marshal(msg)
 	if err != nil {
-		return nil, fmt.Errorf("could not marshal message: %zw", err)
+		return nil, fmt.Errorf("could not marshal message: %w", err)
 	}
 
 	if _, err = p.Write(b); err != nil {
