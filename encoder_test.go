@@ -138,3 +138,35 @@ func TestRoundTripPreservesDenseNodeVisibility(t *testing.T) {
 		t.Fatalf("node 1002 visibility mismatch: got %t want %t", got, true)
 	}
 }
+
+func TestRoundTripPreservesOsmosisReplicationTimestamp(t *testing.T) {
+	t.Parallel()
+
+	want := time.Date(2024, time.October, 28, 21, 21, 30, 0, time.UTC)
+
+	nodes := []model.Entity{
+		&model.Node{ID: 1, Info: &model.Info{Visible: true}},
+	}
+
+	var encoded bytes.Buffer
+
+	enc, err := NewEncoder(&encoded, WithOsmosisReplicationTimestamp(want))
+	if err != nil {
+		t.Fatalf("create encoder: %v", err)
+	}
+
+	if err := enc.EncodeBatch(nodes); err != nil {
+		t.Fatalf("encode nodes: %v", err)
+	}
+	enc.Close()
+
+	dec, err := NewDecoder(context.Background(), bytes.NewReader(encoded.Bytes()))
+	if err != nil {
+		t.Fatalf("create decoder: %v", err)
+	}
+	defer dec.Close()
+
+	if got := dec.Header.OsmosisReplicationTimestamp; !got.Equal(want) {
+		t.Fatalf("replication timestamp = %v, want %v", got, want)
+	}
+}

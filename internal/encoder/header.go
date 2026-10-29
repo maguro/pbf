@@ -37,7 +37,7 @@ func SaveHeader(wrtr io.Writer, hdr *model.Header, compression BlobCompression) 
 		OptionalFeatures:                 hdr.OptionalFeatures,
 		Writingprogram:                   proto.String(hdr.WritingProgram),
 		Source:                           proto.String(hdr.Source),
-		OsmosisReplicationTimestamp:      proto.Int64(fromTimestamp(DateGranularityMs, hdr.OsmosisReplicationTimestamp)),
+		OsmosisReplicationTimestamp:      proto.Int64(hdr.OsmosisReplicationTimestamp.Unix()),
 		OsmosisReplicationSequenceNumber: proto.Int64(hdr.OsmosisReplicationSequenceNumber),
 		OsmosisReplicationBaseUrl:        proto.String(hdr.OsmosisReplicationBaseURL),
 	}
