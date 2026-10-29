@@ -168,8 +168,7 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 
 		kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
 		for i, k := range kIDs {
-			keyValIDs = append(keyValIDs, int32(k))       //nolint:gosec // The value is a table index that IndexOf returned as an int32.
-			keyValIDs = append(keyValIDs, int32(vIDs[i])) //nolint:gosec // The value is a table index that IndexOf returned as an int32.
+			keyValIDs = append(keyValIDs, int32(k), int32(vIDs[i])) //nolint:gosec // The values are table indexes that IndexOf returned as int32.
 		}
 
 		keyValIDs = append(keyValIDs, 0)
