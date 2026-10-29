@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# GOTOOLCHAIN=local stops Go from downloading a toolchain newer than the one
+# setup-go installed. Without it the pinned versions below are advisory.
+env:
+  GOTOOLCHAIN: local
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
