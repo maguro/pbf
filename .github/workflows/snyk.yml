@@ -1,0 +1,26 @@
+name: Workflow for Snyk
+# This workflow reports the vulnerabilities that Snyk finds in the module and
+# its dependencies. It runs on a schedule and on pushes to the default branch.
+# The SNYK_TOKEN secret gives the workflow access to the Snyk account.
+on:
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: '30 6 * * 1'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run the Snyk analysis
+        uses: snyk/actions/golang@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
