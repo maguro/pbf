@@ -9,6 +9,9 @@ BENCHSTAT_BIN := $(ROOT_DIR)/.cache/bin/benchstat-$(BENCHSTAT_VERSION)
 BENCHSTAT := $(BENCHSTAT_BIN)/benchstat
 BASE ?= HEAD
 BENCH_COUNT ?= 10
+GOLANGCI_LINT_VERSION := v2.15.0
+GOLANGCI_LINT_BIN := $(ROOT_DIR)/.cache/bin/golangci-lint-$(GOLANGCI_LINT_VERSION)
+GOLANGCI_LINT := $(GOLANGCI_LINT_BIN)/golangci-lint
 export GOCACHE
 export GOMODCACHE
 export GOLANGCI_LINT_CACHE
@@ -67,9 +70,13 @@ bench-compare: $(BENCHSTAT)
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	scripts/bench-compare.sh "$(BASE)" "$(BENCH_COUNT)" "$(BENCHSTAT)"
 
-lint:
+$(GOLANGCI_LINT):
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	GOBIN="$(GOLANGCI_LINT_BIN)" $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+
+lint: $(GOLANGCI_LINT)
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
-	golangci-lint run
+	$(GOLANGCI_LINT) run
 
 tidy:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"

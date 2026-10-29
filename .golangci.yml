@@ -1,93 +1,147 @@
 version: "2"
-run:
-  concurrency: 4
-  build-tags:
-    - mytag
-  modules-download-mode: readonly
-  issues-exit-code: 2
-  tests: false
-  allow-parallel-runners: true
-  allow-serial-runners: true
-output:
-  formats:
-    text:
-      path: stdout
-      print-linter-name: false
-      print-issued-lines: false
-  sort-order:
-    - linter
-    - severity
-    - file
-  path-prefix: ""
 linters:
-  default: fast
+  default: none
   enable:
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - dupl
+    - errcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - funcorder
+    - funlen
+    - gochecknoinits
     - goconst
-    - prealloc
-    - predeclared
-  disable:
-    - depguard
+    - gocritic
+    - gocyclo
+    - goprintffuncname
+    - gosec
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - mnd
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+  # don't enable:
+  # - asciicheck
+  # - gochecknoglobals
+  # - gocognit
+  # - godot
+  # - godox
+  # - goerr113
+  # - nestif
+  # - prealloc
+  # - testpackage
+  # - wsl
   settings:
-    prealloc:
-      simple: true
-      range-loops: false
-      for-loops: true
+    dupl:
+      threshold: 100
+    exhaustive:
+      default-signifies-exhaustive: true
+    funcorder:
+      constructor: true
+      struct-method: true
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+      ignore-tests: true
+    gocritic:
+      disabled-checks:
+        - dupImport # https://github.com/go-critic/go-critic/issues/845
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - wrapperFunc
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: context-as-argument
+        - name: error-strings
+        - name: indent-error-flow
+        - name: receiver-naming
+    mnd:
+      # don't include the "operation" and "assign"
+      checks:
+        - argument
+        - case
+        - condition
+        - return
+    nolintlint:
+      require-explanation: false # don't require an explanation for nolint directives
+      require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+      allow-unused: false # report any unused nolint directives
   exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
       - linters:
           - dupl
-          - errcheck
-          - gocyclo
-          - gosec
+          - errname
+          - funlen
+          - gochecknoinits
+          - lll
+          - mnd
+          - whitespace
         path: _test\.go
       - linters:
-          - forbidigo
-        path-except: _test\.go
+          - govet
+        path: _test\.go
+        text: 'shadow:'
+      # https://github.com/go-critic/go-critic/issues/926
       - linters:
-          - gosec
-        path: internal/hmac/
-        text: weak cryptographic primitive
-      - linters:
-          - staticcheck
-        text: 'SA9003:'
-      - linters:
-          - lll
-        source: '^//go:generate '
+          - gocritic
+        text: 'unnecessaryDefer:'
     paths:
-      - .*\.my\.go$
-      - lib/bad.go
-      - pb
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  new-from-rev: HEAD
-  whole-files: true
-  new: true
-severity:
-  default: error
-  rules:
-    - linters:
-        - dupl
-      severity: info
+      - third_party$
+      - builtin$
 formatters:
   enable:
-    - gci
     - gofmt
-    - gofumpt
     - goimports
   settings:
     gci:
       sections:
         - standard
         - default
-        - blank
-        - dot
-        - alias
         - prefix(m4o.io/pbf)
-        - localmodule
-      custom-order: true
+    goimports:
+      local-prefixes:
+        - m4o.io/pbf
   exclusions:
+    generated: lax
     paths:
-      - .*\.my\.go$
-      - lib/bad.go
-      - pb
+      - third_party$
+      - builtin$
