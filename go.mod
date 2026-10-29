@@ -3,7 +3,7 @@ module m4o.io/pbf/v2
 go 1.25.0
 
 require (
-	github.com/destel/rill v0.5.0
+	github.com/destel/rill v0.9.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/klauspost/compress v1.20.3

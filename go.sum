@@ -2,8 +2,8 @@ github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/destel/rill v0.5.0 h1:+1F/IqH8rjkScTEHDPiYL2SJomEtnGGczO9uIJKNuFY=
-github.com/destel/rill v0.5.0/go.mod h1:srKuXzvGqINUEGYR5b/iwvW+L9/S35RxVHWGYbXNoO4=
+github.com/destel/rill v0.9.0 h1:Tg9TFzZq6SD6ndHbXGj37j2anEeE5H3cxlPVIZjifCc=
+github.com/destel/rill v0.9.0/go.mod h1:JgU2akn1tHTKg8kKzaTi0Wup9ajM7wIQqWz/qiWP7MI=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=

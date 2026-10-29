@@ -90,7 +90,7 @@ func (d *Decoder) Decode() ([]model.Entity, error) {
 // Close will cancel the background decoding pipeline.
 func (d *Decoder) Close() {
 	d.cancel()
-	rill.DrainNB(d.Entities)
+	rill.Discard(d.Entities)
 }
 
 func isSupportedRequiredFeature(feature string) bool {
