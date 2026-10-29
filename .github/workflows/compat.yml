@@ -1,0 +1,37 @@
+name: Workflow for Go compatibility
+# This workflow reports whether the module still builds and passes on the
+# current Go releases. It runs on a schedule and never gates a pull request.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        go-version: [ 'oldstable', 'stable' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Report the resolved Go version
+        run: go version
+        shell: bash
+
+      - name: Build
+        run: make build
+        shell: bash
+
+      - name: Test
+        run: make test
+        shell: bash
