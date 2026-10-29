@@ -12,12 +12,13 @@ BENCH_COUNT ?= 10
 GOLANGCI_LINT_VERSION := v2.15.0
 GOLANGCI_LINT_BIN := $(ROOT_DIR)/.cache/bin/golangci-lint-$(GOLANGCI_LINT_VERSION)
 GOLANGCI_LINT := $(GOLANGCI_LINT_BIN)/golangci-lint
+GOVULNCHECK_VERSION := v1.9.0
 export GOCACHE
 export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint tidy build verify
+.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint vuln tidy build verify
 
 help:
 	@echo "Available targets:"
@@ -29,6 +30,7 @@ help:
 	@echo "  bench            - Run benchmarks ten times with allocation stats"
 	@echo "  bench-compare    - Compare benchmarks of BASE (default HEAD) with the working tree"
 	@echo "  lint             - Run golangci-lint"
+	@echo "  vuln             - Check for reachable vulnerabilities with govulncheck"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
 	@echo "  verify           - Run fmt check, tests, lint, and build"
@@ -77,6 +79,10 @@ $(GOLANGCI_LINT):
 lint: $(GOLANGCI_LINT)
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
 	$(GOLANGCI_LINT) run
+
+vuln:
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	$(GO) run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) $(PKGS)
 
 tidy:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
