@@ -30,6 +30,10 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
+          # The Branch-Protection check reads classic branch protection,
+          # which GITHUB_TOKEN cannot read. SCORECARD_TOKEN needs read-only
+          # Administration permission on the repository.
+          repo_token: ${{ secrets.SCORECARD_TOKEN }}
           # Publication makes the results available to the README badge.
           publish_results: true
 
