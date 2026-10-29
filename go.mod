@@ -1,6 +1,6 @@
 module m4o.io/pbf/v2
 
-go 1.24
+go 1.25
 
 require (
 	github.com/destel/rill v0.5.0

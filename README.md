@@ -219,8 +219,8 @@ and `WithOsmosisReplicationBaseURL`.
 ## Go Version Support
 
 - Supported window: the Go release from approximately one year ago through latest stable.
-- As of February 26, 2026, CI-verified versions are `1.24.x`, `1.25.x`, and `1.26.x`.
-- `go.mod` currently declares `go 1.24`; this is a compatibility floor, while active support is the CI-verified window above.
+- As of October 28, 2026, CI-verified versions are `1.25.x` and `1.26.x`.
+- `go.mod` currently declares `go 1.25`; this is a compatibility floor, while active support is the CI-verified window above.
 - Bug reports should include `go version` output so compatibility issues can be reproduced quickly.
 
 ## pbf Command Line Utility
