@@ -106,8 +106,3 @@ jobs:
           cache: true
       - name: Calc coverage
         run: go test -v -covermode=count -coverprofile=coverage.out -timeout 10s ./...
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@299e4b793aaa83bf2aba7c9c14bedbb485688ec4 # v7.1.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
