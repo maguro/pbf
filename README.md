@@ -3,6 +3,7 @@ OpenStreetMap PBF golang encoder/decoder
 
 [![Build Status](https://github.com/maguro/pbf/actions/workflows/ci.yml/badge.svg)](https://github.com/maguro/pbf/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/maguro/pbf/badge)](https://scorecard.dev/viewer/?uri=github.com/maguro/pbf)
+[![Coverage Status](https://coveralls.io/repos/github/maguro/pbf/badge.svg?branch=master)](https://coveralls.io/github/maguro/pbf?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/maguro/pbf)](https://goreportcard.com/report/github.com/maguro/pbf) 
 [![Documentation](https://godoc.org/github.com/maguro/pbf?status.svg)](http://godoc.org/github.com/maguro/pbf)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
