@@ -52,7 +52,7 @@ func BenchmarkDecodeLondon(b *testing.B) {
 		opts = append(opts, WithProtoBufferSize(pbs))
 	}
 
-	if ncpu, err := strconv.Atoi(os.Getenv("PBF_NCPU")); err == nil {
+	if ncpu, err := strconv.ParseUint(os.Getenv("PBF_NCPU"), 10, 16); err == nil && ncpu > 0 {
 		opts = append(opts, WithNCpus(uint16(ncpu)))
 	}
 

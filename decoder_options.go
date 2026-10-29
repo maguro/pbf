@@ -15,6 +15,7 @@
 package pbf
 
 import (
+	"math"
 	"runtime"
 )
 
@@ -28,9 +29,12 @@ const (
 
 // DefaultNCpu provides the default number of CPUs.
 func DefaultNCpu() uint16 {
-	cpus := uint16(runtime.GOMAXPROCS(-1))
+	cpus := runtime.GOMAXPROCS(-1)
+	if cpus > math.MaxUint16 {
+		cpus = math.MaxUint16
+	}
 
-	return max(cpus-1, 1)
+	return uint16(max(cpus-1, 1))
 }
 
 // decoderOptions provides optional configuration parameters for Decoder construction.
