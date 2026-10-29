@@ -6,7 +6,7 @@ require (
 	github.com/destel/rill v0.5.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
-	github.com/klauspost/compress v1.18.7
+	github.com/klauspost/compress v1.20.3
 	github.com/pierrec/lz4 v2.6.1+incompatible
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
