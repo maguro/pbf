@@ -321,6 +321,8 @@ func toInfoPb(info *model.Info, table *Table) *pb.Info {
 
 // fromTimestamp converts a timestamp with a specific granularity, in units of
 // milliseconds, to a UTC timestamp of type Time.
+//
+//nolint:unparam // The PBF format lets each block set its date_granularity. The encoder writes only DateGranularityMs.
 func fromTimestamp(granularity int32, timestamp time.Time) int64 {
 	millis := timestamp.UnixMilli()
 
