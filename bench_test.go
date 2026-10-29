@@ -15,6 +15,7 @@
 package pbf
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -23,6 +24,7 @@ import (
 	"strconv"
 	"testing"
 
+	"m4o.io/pbf/v2/internal/encoder"
 	"m4o.io/pbf/v2/model"
 )
 
@@ -115,16 +117,114 @@ func BenchmarkEncodeLondon(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		encoder, err := NewEncoder(io.Discard, WithStorePath(store))
+		enc, err := NewEncoder(io.Discard, WithStorePath(store))
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		if err := encoder.EncodeBatch(entities); err != nil {
-			encoder.Close()
+		if err := enc.EncodeBatch(entities); err != nil {
+			enc.Close()
 			b.Fatal(err)
 		}
 
-		encoder.Close()
+		enc.Close()
 	}
+}
+
+func BenchmarkDecodeLondonZstd(b *testing.B) {
+	data := encodeLondon(b, encoder.ZSTD)
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		decoder, err := NewDecoder(context.Background(), bytes.NewReader(data))
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		for {
+			if _, err := decoder.Decode(); errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
+				decoder.Close()
+				b.Fatal(err)
+			}
+		}
+
+		decoder.Close()
+	}
+}
+
+func BenchmarkEncodeLondonZstd(b *testing.B) {
+	entities := decodeLondon(b)
+	store := b.TempDir()
+
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		enc, err := NewEncoder(io.Discard, WithStorePath(store), WithCompression(encoder.ZSTD))
+		if err != nil {
+			b.Fatal(err)
+		}
+
+		if err := enc.EncodeBatch(entities); err != nil {
+			enc.Close()
+			b.Fatal(err)
+		}
+
+		enc.Close()
+	}
+}
+
+// decodeLondon returns all entities of the Greater London test file.
+func decodeLondon(b *testing.B) []model.Entity {
+	b.Helper()
+
+	in, err := os.Open("testdata/greater-london.osm.pbf")
+	if err != nil {
+		b.Fatalf("Error reading file: %v", err)
+	}
+
+	defer in.Close()
+
+	decoder, err := NewDecoder(context.Background(), in)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	defer decoder.Close()
+
+	var entities []model.Entity
+
+	for {
+		batch, err := decoder.Decode()
+		if errors.Is(err, io.EOF) {
+			return entities
+		} else if err != nil {
+			b.Fatal(err)
+		}
+
+		entities = append(entities, batch...)
+	}
+}
+
+// encodeLondon returns the Greater London test file encoded with compression.
+func encodeLondon(b *testing.B, compression encoder.BlobCompression) []byte {
+	b.Helper()
+
+	var buf bytes.Buffer
+
+	enc, err := NewEncoder(&buf, WithStorePath(b.TempDir()), WithCompression(compression))
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	if err := enc.EncodeBatch(decodeLondon(b)); err != nil {
+		enc.Close()
+		b.Fatal(err)
+	}
+
+	enc.Close()
+
+	return buf.Bytes()
 }
