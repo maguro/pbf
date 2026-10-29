@@ -127,30 +127,19 @@ func (e *Encoder) doClose(err error) {
 
 func (e *Encoder) consumeBBoxes(bboxes <-chan rill.Try[*model.BoundingBox]) {
 	defer e.completed.Done()
-Loop:
-	for {
-		select {
-		case bbox, ok := <-bboxes:
-			if !ok {
-				break Loop
-			}
-			e.Header.BoundingBox.ExpandWithBoundingBox(bbox.Value)
-		}
+
+	for bbox := range bboxes {
+		e.Header.BoundingBox.ExpandWithBoundingBox(bbox.Value)
 	}
 }
 
 func (e *Encoder) consumeStatuses(statuses <-chan rill.Try[struct{}]) {
 	defer e.completed.Done()
-Loop:
-	for {
-		select {
-		case status, ok := <-statuses:
-			if !ok {
-				break Loop
-			} else if status.Error != nil {
-				slog.Error("Got status error", "status", status)
-				e.doClose(status.Error)
-			}
+
+	for status := range statuses {
+		if status.Error != nil {
+			slog.Error("Got status error", "status", status)
+			e.doClose(status.Error)
 		}
 	}
 }
