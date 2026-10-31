@@ -18,22 +18,23 @@ export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint vuln tidy build check verify
+.PHONY: help doctor fmt check-fmt test test-integration coverage bench bench-compare lint vuln tidy build check verify
 
 help:
 	@echo "Available targets:"
 	@echo "  doctor           - Validate local Go toolchain setup"
 	@echo "  fmt              - Format Go code"
-	@echo "  test             - Run unit tests"
-	@echo "  test-race        - Run race-enabled tests"
+	@echo "  check-fmt        - Report formatting changes without writing them"
+	@echo "  test             - Run unit tests with the race detector"
 	@echo "  test-integration - Run integration tests"
+	@echo "  coverage         - Write coverage.out"
 	@echo "  bench            - Run benchmarks ten times with allocation stats"
 	@echo "  bench-compare    - Compare benchmarks of BASE (default HEAD) with the working tree"
 	@echo "  lint             - Run golangci-lint"
 	@echo "  vuln             - Check for reachable vulnerabilities with govulncheck"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
-	@echo "  check            - Run fmt check, tests, and lint"
+	@echo "  check            - Run format check, tests, and lint"
 	@echo "  verify           - Alias for check"
 
 doctor:
@@ -45,21 +46,25 @@ doctor:
 	    go*) [ "$$v" = "$$r" ] || { echo "toolchain mismatch: GOVERSION=$$v, GOROOT=$$r"; exit 1; } ;; \
 	  esac
 
-fmt:
-	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
-	$(GO) fmt $(PKGS)
+fmt: $(GOLANGCI_LINT)
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
+	$(GOLANGCI_LINT) fmt
+
+check-fmt: $(GOLANGCI_LINT)
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
+	$(GOLANGCI_LINT) fmt --diff
 
 test:
-	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
-	$(GO) test -v -timeout 30s $(PKGS)
-
-test-race:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	$(GO) test -v -race -timeout 30s $(PKGS)
 
 test-integration:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	$(GO) test -v -tags=integration $(PKGS)
+
+coverage:
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	$(GO) test -v -covermode=count -coverprofile=coverage.out -timeout 30s $(PKGS)
 
 bench:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
@@ -95,8 +100,7 @@ build:
 
 check:
 	$(MAKE) doctor
-	@echo "Checking formatting..."
-	@test -z "$$($(GO) fmt $(PKGS))" || (echo "Formatting changes required. Run 'make fmt'." && exit 1)
+	$(MAKE) check-fmt
 	$(MAKE) test
 	$(MAKE) test-integration
 	$(MAKE) lint

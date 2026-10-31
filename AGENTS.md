@@ -28,11 +28,12 @@ Use these skills from `.claude/skills/` when the task matches:
 ## Commands
 
 - Format: `make fmt`
-- Unit tests: `make test`
-- Race tests: `make test-race`
+- Format check: `make check-fmt`
+- Unit tests, with the race detector: `make test`
 - Integration tests: `make test-integration`
 - Benchmarks: `make bench`
 - Benchmark comparison: `make bench-compare BASE=<commit>` (default `HEAD`)
+- Coverage: `make coverage`
 - Lint: `make lint`
 - Gate target: `make check`
 

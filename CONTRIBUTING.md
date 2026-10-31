@@ -6,7 +6,6 @@ This repository includes a Codex-friendly workflow:
 
     $ make fmt
     $ make test
-    $ make test-race
     $ make test-integration
     $ make lint
     $ make check
