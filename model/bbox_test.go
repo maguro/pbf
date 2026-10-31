@@ -24,10 +24,10 @@ import (
 
 func TestInitialBoundingBox(t *testing.T) {
 	initial := model.InitialBoundingBox()
-	assert.Equal(t, initial.Top, model.MinLat)
-	assert.Equal(t, initial.Bottom, model.MaxLat)
-	assert.Equal(t, initial.Right, model.MinLon)
-	assert.Equal(t, initial.Left, model.MaxLon)
+	assert.InDelta(t, float64(model.MinLat), float64(initial.Top), 0)
+	assert.InDelta(t, float64(model.MaxLat), float64(initial.Bottom), 0)
+	assert.InDelta(t, float64(model.MinLon), float64(initial.Right), 0)
+	assert.InDelta(t, float64(model.MaxLon), float64(initial.Left), 0)
 }
 
 func TestBoundingBox_EqualWithin(t *testing.T) {

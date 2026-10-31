@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"m4o.io/pbf/v2/model"
 )
@@ -61,7 +62,7 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 
 	// decode header blob
 	decoder, err := NewDecoder(context.Background(), in)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, reflect.TypeOf(model.Header{}), reflect.TypeOf(decoder.Header))
 

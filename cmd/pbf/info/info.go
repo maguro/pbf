@@ -46,7 +46,7 @@ type extendedHeader struct {
 	RelationCount int64 `json:"relation_count"`
 }
 
-func init() { //nolint:gochecknoinits
+func init() { //nolint:gochecknoinits // Cobra adds a subcommand at package load.
 	cli.RootCmd.AddCommand(infoCmd)
 
 	flags := infoCmd.Flags()

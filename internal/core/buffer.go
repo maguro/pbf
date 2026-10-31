@@ -32,7 +32,7 @@ type PooledBuffer struct {
 }
 
 func NewPooledBuffer() *PooledBuffer {
-	//nolint:forcetypeassert
+	//nolint:forcetypeassert // bufferPool holds only *bytes.Buffer values.
 	return &PooledBuffer{Buffer: bufferPool.Get().(*bytes.Buffer)}
 }
 
