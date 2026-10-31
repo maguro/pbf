@@ -236,23 +236,31 @@ type denseInfoContext struct {
 }
 
 func (dic *denseInfoContext) decodeInfo(i int) *model.Info {
-	dic.version += dic.versions[i]
-	dic.uid += dic.uids[i]
-	dic.timestamp += dic.timestamps[i]
-	dic.changeset += dic.changesets[i]
-	dic.userSid += dic.userSids[i]
-
-	info := &model.Info{
-		Version:   dic.version,
-		UID:       dic.uid,
-		Timestamp: toTimestamp(dic.dateGranularity, dic.timestamp),
-		Changeset: dic.changeset,
-		User:      dic.strings[dic.userSid],
+	// DenseInfo and each of its arrays are optional. Use the same defaults
+	// as a non-dense node without Info for fields that are absent.
+	info := &model.Info{Visible: true}
+	if i < len(dic.versions) {
+		dic.version += dic.versions[i]
+		info.Version = dic.version
+	}
+	if i < len(dic.uids) {
+		dic.uid += dic.uids[i]
+		info.UID = dic.uid
+	}
+	if i < len(dic.timestamps) {
+		dic.timestamp += dic.timestamps[i]
+		info.Timestamp = toTimestamp(dic.dateGranularity, dic.timestamp)
+	}
+	if i < len(dic.changesets) {
+		dic.changeset += dic.changesets[i]
+		info.Changeset = dic.changeset
+	}
+	if i < len(dic.userSids) {
+		dic.userSid += dic.userSids[i]
+		info.User = dic.strings[dic.userSid]
 	}
 
-	if dic.visibilities == nil {
-		info.Visible = true
-	} else {
+	if i < len(dic.visibilities) {
 		info.Visible = dic.visibilities[i]
 	}
 
