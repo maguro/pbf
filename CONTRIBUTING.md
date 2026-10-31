@@ -9,7 +9,7 @@ This repository includes a Codex-friendly workflow:
     $ make test-race
     $ make test-integration
     $ make lint
-    $ make verify
+    $ make check
 
 Project-specific agent guidance is documented in `AGENTS.md`. The rules for
 every edit are in `CODING_STANDARDS.md`. Task procedures, such as how to write

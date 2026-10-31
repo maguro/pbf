@@ -34,9 +34,9 @@ Use these skills from `.claude/skills/` when the task matches:
 - Benchmarks: `make bench`
 - Benchmark comparison: `make bench-compare BASE=<commit>` (default `HEAD`)
 - Lint: `make lint`
-- Gate target: `make verify`
+- Gate target: `make check`
 
-For each change, run `make fmt`, `make test`, and `make lint`. Run `make verify`
+For each change, run `make fmt`, `make test`, and `make lint`. Run `make check`
 before merge.
 
 ## Hot paths

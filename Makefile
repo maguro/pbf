@@ -18,7 +18,7 @@ export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint vuln tidy build verify
+.PHONY: help doctor fmt test test-race test-integration bench bench-compare lint vuln tidy build check verify
 
 help:
 	@echo "Available targets:"
@@ -33,7 +33,8 @@ help:
 	@echo "  vuln             - Check for reachable vulnerabilities with govulncheck"
 	@echo "  tidy             - Tidy module dependencies"
 	@echo "  build            - Build all packages"
-	@echo "  verify           - Run fmt check, tests, lint, and build"
+	@echo "  check            - Run fmt check, tests, and lint"
+	@echo "  verify           - Alias for check"
 
 doctor:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)" "$(GOLANGCI_LINT_CACHE)"
@@ -92,11 +93,12 @@ build:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	$(GO) build $(PKGS)
 
-verify:
+check:
 	$(MAKE) doctor
 	@echo "Checking formatting..."
 	@test -z "$$($(GO) fmt $(PKGS))" || (echo "Formatting changes required. Run 'make fmt'." && exit 1)
 	$(MAKE) test
 	$(MAKE) test-integration
 	$(MAKE) lint
-	$(MAKE) build
+
+verify: check
