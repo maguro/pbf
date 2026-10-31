@@ -13,9 +13,9 @@ updates:
       github-actions:
         patterns:
           - "*"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "gomod"
     directory: "/"
@@ -25,6 +25,6 @@ updates:
       go-modules:
         patterns:
           - "*"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "minor"
+          - "patch"
