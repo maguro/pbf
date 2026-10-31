@@ -154,6 +154,41 @@ func TestParsePrimitiveBlockSkipsChangeSets(t *testing.T) {
 	assert.Equal(t, model.ID(42), entities[0].GetID())
 }
 
+func TestParsePrimitiveBlockDecodesOptionalDenseInfo(t *testing.T) {
+	tests := []struct {
+		name string
+		info []byte
+		want model.Info
+	}{
+		{name: "no denseinfo", want: model.Info{Visible: true}},
+		{name: "empty denseinfo", info: field(5, nil), want: model.Info{Visible: true}},
+		{name: "version only", info: field(5, field(1, packedVarint(3))), want: model.Info{Version: 3, Visible: true}},
+		{name: "timestamp only", info: field(5, field(2, packedZigZag(42))), want: model.Info{Timestamp: time.Unix(42, 0).UTC(), Visible: true}},
+		{name: "changeset only", info: field(5, field(3, packedZigZag(7))), want: model.Info{Changeset: 7, Visible: true}},
+		{name: "uid only", info: field(5, field(4, packedZigZag(9))), want: model.Info{UID: 9, Visible: true}},
+		{name: "user only", info: field(5, field(5, packedZigZag(1))), want: model.Info{User: "alice", Visible: true}},
+		{name: "visibility only", info: field(5, field(6, packedVarint(0))), want: model.Info{Visible: false}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			block := message(
+				field(1, message(field(1, nil), field(1, []byte("alice")))),
+				field(2, field(2, message(
+					field(1, packedZigZag(42)), // id
+					tc.info,
+					field(8, packedZigZag(0)), // lat
+					field(9, packedZigZag(0)), // lon
+				))),
+			)
+			entities, err := parsePrimitiveBlock(block)
+			require.NoError(t, err)
+			require.Len(t, entities, 1)
+			assert.Equal(t, model.ID(42), entities[0].GetID())
+			assert.Equal(t, &tc.want, entities[0].GetInfo())
+		})
+	}
+}
+
 func message(fields ...[]byte) []byte {
 	var b []byte
 	for _, f := range fields {
