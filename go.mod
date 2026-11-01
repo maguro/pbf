@@ -9,7 +9,7 @@ require (
 	github.com/klauspost/compress v1.20.3
 	github.com/pierrec/lz4 v2.6.1+incompatible
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
 	github.com/ulikunitz/xz v0.5.17
 	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8
