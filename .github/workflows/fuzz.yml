@@ -1,0 +1,43 @@
+name: Workflow for fuzzing
+# This workflow runs each fuzz test for five minutes. It runs on a schedule
+# and never gates a pull request. When a fuzz test fails, the log shows the
+# input that caused the failure.
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions: read-all
+
+env:
+  GOTOOLCHAIN: local
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: FuzzDecode
+            package: .
+          - target: FuzzRoundTrip
+            package: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+
+      - name: Fuzz ${{ matrix.target }} in ${{ matrix.package }}
+        run: make fuzz FUZZ=${{ matrix.target }} FUZZ_PKG=${{ matrix.package }} FUZZTIME=5m
+        shell: bash
+
+      - name: Show the failing input
+        if: failure()
+        run: find . -path '*/testdata/fuzz/*' -type f -print -exec cat {} \;
+        shell: bash

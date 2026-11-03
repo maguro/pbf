@@ -34,6 +34,7 @@ Use these skills from `.claude/skills/` when the task matches:
 - Benchmarks: `make bench`
 - Benchmark comparison: `make bench-compare BASE=<commit>` (default `HEAD`)
 - Coverage: `make coverage`
+- Fuzz: `make fuzz FUZZ=<target> FUZZTIME=<duration>`
 - Lint: `make lint`
 - Gate target: `make check`
 

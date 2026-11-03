@@ -10,6 +10,9 @@ BENCHSTAT_BIN := $(ROOT_DIR)/.cache/bin/benchstat-$(BENCHSTAT_VERSION)
 BENCHSTAT := $(BENCHSTAT_BIN)/benchstat
 BASE ?= HEAD
 BENCH_COUNT ?= 10
+FUZZ ?= FuzzDecode
+FUZZ_PKG ?= .
+FUZZTIME ?= 1m
 GOLANGCI_LINT_VERSION := v2.15.0
 GOLANGCI_LINT_BIN := $(ROOT_DIR)/.cache/bin/golangci-lint-$(GOLANGCI_LINT_VERSION)
 GOLANGCI_LINT := $(GOLANGCI_LINT_BIN)/golangci-lint
@@ -19,7 +22,7 @@ export GOMODCACHE
 export GOLANGCI_LINT_CACHE
 unexport GOROOT
 
-.PHONY: help doctor fmt check-fmt test test-integration coverage bench bench-compare lint vuln tidy build check verify
+.PHONY: help doctor fmt check-fmt test test-integration coverage bench bench-compare fuzz lint vuln tidy build check verify
 
 help:
 	@echo "Available targets:"
@@ -31,6 +34,7 @@ help:
 	@echo "  coverage         - Write coverage.out"
 	@echo "  bench            - Run benchmarks ten times with allocation stats"
 	@echo "  bench-compare    - Compare benchmarks of BASE (default HEAD) with the working tree"
+	@echo "  fuzz             - Run the FUZZ target in FUZZ_PKG for FUZZTIME"
 	@echo "  lint             - Run golangci-lint"
 	@echo "  vuln             - Check for reachable vulnerabilities with govulncheck"
 	@echo "  tidy             - Tidy module dependencies"
@@ -78,6 +82,10 @@ $(BENCHSTAT):
 bench-compare: $(BENCHSTAT)
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
 	scripts/bench-compare.sh "$(BASE)" "$(BENCH_COUNT)" "$(BENCHSTAT)"
+
+fuzz:
+	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
+	$(GO) test -run '^$$' -fuzz '^$(FUZZ)$$' -fuzztime $(FUZZTIME) $(FUZZ_PKG)
 
 $(GOLANGCI_LINT):
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
