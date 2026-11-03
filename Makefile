@@ -1,5 +1,6 @@
 GO ?= go
 PKGS := ./...
+MODULE := $(shell $(GO) list -m)
 ROOT_DIR := $(CURDIR)
 GOCACHE ?= $(ROOT_DIR)/.cache/go-build
 GOMODCACHE ?= $(ROOT_DIR)/.cache/go-mod
@@ -64,7 +65,7 @@ test-integration:
 
 coverage:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
-	$(GO) test -v -covermode=count -coverprofile=coverage.out -timeout 30s $(PKGS)
+	$(GO) test -v -covermode=count -coverpkg=$(MODULE)/... -coverprofile=coverage.out -timeout 30s $(PKGS)
 
 bench:
 	@mkdir -p "$(GOCACHE)" "$(GOMODCACHE)"
