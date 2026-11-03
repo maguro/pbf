@@ -64,6 +64,7 @@ func TestRoundTripOSMPBFDatasets(t *testing.T) {
 		{name: "bremen", path: "testdata/bremen.osm.pbf", compareNodeDigest: true},
 		{name: "london", path: "testdata/greater-london.osm.pbf", compareNodeDigest: true},
 		{name: "san-francisco", path: "testdata/san-francisco.osm.pbf", compareNodeDigest: true},
+		{name: "edge-cases", path: "testdata/edge-cases.osm.pbf", compareNodeDigest: true},
 	}
 
 	if *pbfPath != "" {
