@@ -16,6 +16,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"slices"
 	"sort"
 	"testing"
 	"time"
@@ -32,6 +33,9 @@ type entityDigest struct {
 	nodeSum   [sha256.Size]byte
 	waySum    [sha256.Size]byte
 	relSum    [sha256.Size]byte
+	// extent is the bounding box of the node coordinates. The encoder writes
+	// this extent to the header, not the bounding box of the source header.
+	extent *model.BoundingBox
 }
 
 type multisetHasher struct {
@@ -68,7 +72,7 @@ func TestRoundTripOSMPBFDatasets(t *testing.T) {
 			defer decoded.Close()
 
 			var encoded bytes.Buffer
-			reencoded, err := NewEncoder(&encoded)
+			reencoded, err := NewEncoder(&encoded, headerOptions(decoded.Header)...)
 			if err != nil {
 				t.Fatalf("create encoder: %v", err)
 			}
@@ -102,7 +106,51 @@ func TestRoundTripOSMPBFDatasets(t *testing.T) {
 			if tc.compareNodeDigest && sourceDigest.nodeSum != roundTripDigest.nodeSum {
 				t.Fatalf("source and round-trip node digests differ\nsource: %+v\nround-trip: %+v", sourceDigest, roundTripDigest)
 			}
+
+			assertHeader(t, decoded.Header, sourceDigest.extent, roundTrip.Header)
 		})
+	}
+}
+
+// headerOptions returns the encoder options that copy the source header.
+// headerOptions does not copy the writing program or the bounding box. The
+// encoder writes its own values for these fields.
+func headerOptions(hdr model.Header) []EncoderOption {
+	return []EncoderOption{
+		WithRequiredFeatures(hdr.RequiredFeatures...),
+		WithOptionalFeatures(hdr.OptionalFeatures...),
+		WithSource(hdr.Source),
+		WithOsmosisReplicationTimestamp(hdr.OsmosisReplicationTimestamp),
+		WithOsmosisReplicationSequenceNumber(hdr.OsmosisReplicationSequenceNumber),
+		WithOsmosisReplicationBaseURL(hdr.OsmosisReplicationBaseURL),
+	}
+}
+
+// assertHeader compares the round-trip header with the source header. The
+// round-trip bounding box must be equal to the extent of the source nodes.
+func assertHeader(t *testing.T, source model.Header, extent *model.BoundingBox, got model.Header) {
+	t.Helper()
+
+	if !slices.Equal(source.RequiredFeatures, got.RequiredFeatures) {
+		t.Errorf("required features = %q, want %q", got.RequiredFeatures, source.RequiredFeatures)
+	}
+	if !slices.Equal(source.OptionalFeatures, got.OptionalFeatures) {
+		t.Errorf("optional features = %q, want %q", got.OptionalFeatures, source.OptionalFeatures)
+	}
+	if got.Source != source.Source {
+		t.Errorf("source = %q, want %q", got.Source, source.Source)
+	}
+	if !got.OsmosisReplicationTimestamp.Equal(source.OsmosisReplicationTimestamp) {
+		t.Errorf("replication timestamp = %v, want %v", got.OsmosisReplicationTimestamp, source.OsmosisReplicationTimestamp)
+	}
+	if got.OsmosisReplicationSequenceNumber != source.OsmosisReplicationSequenceNumber {
+		t.Errorf("replication sequence number = %d, want %d", got.OsmosisReplicationSequenceNumber, source.OsmosisReplicationSequenceNumber)
+	}
+	if got.OsmosisReplicationBaseURL != source.OsmosisReplicationBaseURL {
+		t.Errorf("replication base URL = %q, want %q", got.OsmosisReplicationBaseURL, source.OsmosisReplicationBaseURL)
+	}
+	if !got.BoundingBox.EqualWithin(extent, model.E7) {
+		t.Errorf("bounding box = %s, want %s", got.BoundingBox, extent)
 	}
 }
 
@@ -111,7 +159,7 @@ func digestAndEncode(dec *Decoder, enc *Encoder) (entityDigest, error) {
 	nodeHasher := multisetHasher{}
 	wayHasher := multisetHasher{}
 	relHasher := multisetHasher{}
-	stats := entityDigest{}
+	stats := entityDigest{extent: model.InitialBoundingBox()}
 
 	for {
 		entities, err := dec.Decode()
@@ -144,7 +192,7 @@ func digestDecoder(dec *Decoder) (entityDigest, error) {
 	nodeHasher := multisetHasher{}
 	wayHasher := multisetHasher{}
 	relHasher := multisetHasher{}
-	stats := entityDigest{}
+	stats := entityDigest{extent: model.InitialBoundingBox()}
 
 	for {
 		entities, err := dec.Decode()
@@ -180,6 +228,7 @@ func digestEntities(hasher, nodeHasher, wayHasher, relHasher *multisetHasher, st
 			stats.nodes++
 			hasher.AddNode(*typed)
 			nodeHasher.AddNode(*typed)
+			stats.extent.ExpandWithLatLng(typed.Lat, typed.Lon)
 		case model.Way:
 			stats.ways++
 			hasher.AddWay(typed)
