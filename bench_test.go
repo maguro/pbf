@@ -101,12 +101,10 @@ func BenchmarkEncodeLondon(b *testing.B) {
 
 	decoder.Close()
 
-	store := b.TempDir()
-
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		enc, err := NewEncoder(io.Discard, WithStorePath(store))
+		enc, err := NewEncoder(io.Discard, WithStorePath(b.TempDir()))
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -146,12 +144,10 @@ func BenchmarkDecodeLondonZstd(b *testing.B) {
 
 func BenchmarkEncodeLondonZstd(b *testing.B) {
 	entities := decodeLondon(b)
-	store := b.TempDir()
-
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		enc, err := NewEncoder(io.Discard, WithStorePath(store), WithCompression(encoder.ZSTD))
+		enc, err := NewEncoder(io.Discard, WithStorePath(b.TempDir()), WithCompression(encoder.ZSTD))
 		if err != nil {
 			b.Fatal(err)
 		}
