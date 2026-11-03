@@ -19,7 +19,7 @@ import (
 
 // GenerateBlobReader creates an iterator that returns primitive blobs read
 // off of the reader.
-func GenerateBlobReader(ctx context.Context, reader io.Reader) func(yield func(enc *pb.Blob, err error) bool) {
+func GenerateBlobReader(ctx context.Context, r io.Reader) func(yield func(enc *pb.Blob, err error) bool) {
 	return func(yield func(enc *pb.Blob, err error) bool) {
 		buffer := core.NewPooledBuffer()
 		defer buffer.Close()
@@ -31,7 +31,7 @@ func GenerateBlobReader(ctx context.Context, reader io.Reader) func(yield func(e
 			default:
 			}
 
-			blob, err := readBlob(reader)
+			blob, err := readBlob(r)
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					slog.Error("unable to read blob", "error", err)
@@ -50,14 +50,14 @@ func GenerateBlobReader(ctx context.Context, reader io.Reader) func(yield func(e
 	}
 }
 
-// readBlob reads a PBF blob from the rdr.
-func readBlob(rdr io.Reader) (*pb.Blob, error) {
-	h, err := readBlobHeader(rdr)
+// readBlob reads a PBF blob from r.
+func readBlob(r io.Reader) (*pb.Blob, error) {
+	h, err := readBlobHeader(r)
 	if err != nil {
 		return nil, fmt.Errorf("error reading blob header: %w", err)
 	}
 
-	b, err := readBlobData(rdr, int64(h.GetDatasize()))
+	b, err := readBlobData(r, int64(h.GetDatasize()))
 	if err != nil {
 		return nil, fmt.Errorf("error reading blob: %w", err)
 	}
@@ -67,18 +67,18 @@ func readBlob(rdr io.Reader) (*pb.Blob, error) {
 
 // readBlobHeader unmarshals a header from an array of protobuf encoded bytes.
 // The header is used when decoding blobs into OSM entities.
-func readBlobHeader(rdr io.Reader) (header *pb.BlobHeader, err error) {
+func readBlobHeader(r io.Reader) (header *pb.BlobHeader, err error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()
 
 	var size uint32
 
-	err = binary.Read(rdr, binary.BigEndian, &size)
+	err = binary.Read(r, binary.BigEndian, &size)
 	if err != nil {
 		return nil, fmt.Errorf("error reading blob size: %w", err)
 	}
 
-	if n, err := io.CopyN(buf, rdr, int64(size)); err != nil {
+	if n, err := io.CopyN(buf, r, int64(size)); err != nil {
 		return nil, fmt.Errorf("error reading blob: %w", err)
 	} else if n != int64(size) {
 		return nil, fmt.Errorf("error reading blob: expected %d bytes, got %d", size, n)
@@ -95,11 +95,11 @@ func readBlobHeader(rdr io.Reader) (header *pb.BlobHeader, err error) {
 
 // readBlobData unmarshals a blob from an array of protobuf encoded bytes.  The
 // blob still needs to be decoded into OSM entities.
-func readBlobData(rdr io.Reader, size int64) (*pb.Blob, error) {
+func readBlobData(r io.Reader, size int64) (*pb.Blob, error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()
 
-	if _, err := io.CopyN(buf, rdr, size); err != nil {
+	if _, err := io.CopyN(buf, r, size); err != nil {
 		return nil, fmt.Errorf("error reading blob: %w", err)
 	}
 

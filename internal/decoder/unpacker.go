@@ -55,12 +55,12 @@ func unpack(buf *core.PooledBuffer, blob *pb.Blob) ([]byte, error) {
 		buf.Grow(rawBufferSize)
 	}
 
-	rdr, err := factory(blob)
+	r, err := factory(blob)
 	if err != nil {
 		return nil, fmt.Errorf("unpacker factory error: %w", err)
 	}
 
-	if n, err := buf.ReadFrom(rdr); err != nil {
+	if n, err := buf.ReadFrom(r); err != nil {
 		return nil, fmt.Errorf("unpacker read error: %w", err)
 	} else if n != int64(blob.GetRawSize()) {
 		return nil, fmt.Errorf("raw blob data size %d but expected %d", buf.Len(), blob.GetRawSize())

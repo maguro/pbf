@@ -15,11 +15,11 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-func LoadHeader(reader io.Reader) (model.Header, error) {
+func LoadHeader(r io.Reader) (model.Header, error) {
 	buf := core.NewPooledBuffer()
 	defer buf.Close()
 
-	blob, err := readBlob(reader)
+	blob, err := readBlob(r)
 	if err != nil {
 		return model.Header{}, fmt.Errorf("error reading blob for header: %w", err)
 	}

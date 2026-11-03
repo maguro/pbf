@@ -31,7 +31,7 @@ type encoderOptions struct {
 	compression encoder.BlobCompression
 
 	store string
-	wrtr  *os.File
+	w     *os.File
 
 	requiredFeatures                 []string
 	optionalFeatures                 []string
@@ -134,12 +134,12 @@ func initializeTempStore(o *encoderOptions) error {
 		o.store = tmpdir
 	}
 
-	wrtr, err := os.Create(path.Join(o.store, tempFileName))
+	w, err := os.Create(path.Join(o.store, tempFileName))
 	if err != nil {
 		return fmt.Errorf("%w %s: %w", ErrCreateTempFile, path.Join(o.store, tempFileName), err)
 	}
 
-	o.wrtr = wrtr
+	o.w = w
 
 	return nil
 }

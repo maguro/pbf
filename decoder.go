@@ -27,9 +27,9 @@ type Decoder struct {
 	cancel   context.CancelFunc
 }
 
-// NewDecoder returns a new decoder, configured with cfg, that reads from
-// reader.  The decoder is initialized with the OSM header.
-func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Decoder, error) {
+// NewDecoder returns a new decoder, configured with opts, that reads from r.
+// The decoder is initialized with the OSM header.
+func NewDecoder(ctx context.Context, r io.Reader, opts ...DecoderOption) (*Decoder, error) {
 	d := &Decoder{}
 	cfg := defaultDecoderConfig
 
@@ -39,7 +39,7 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 
 	ctx, d.cancel = context.WithCancel(ctx)
 
-	hdr, err := decoder.LoadHeader(rdr)
+	hdr, err := decoder.LoadHeader(r)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func NewDecoder(ctx context.Context, rdr io.Reader, opts ...DecoderOption) (*Dec
 
 	d.Header = hdr
 
-	blobs := rill.FromSeq2(decoder.GenerateBlobReader(ctx, rdr))
+	blobs := rill.FromSeq2(decoder.GenerateBlobReader(ctx, r))
 
 	batches := rill.Batch(blobs, cfg.protoBatchSize, time.Second)
 

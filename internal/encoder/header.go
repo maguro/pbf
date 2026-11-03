@@ -13,7 +13,7 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
-func SaveHeader(wrtr io.Writer, hdr *model.Header, compression BlobCompression) error {
+func SaveHeader(w io.Writer, hdr *model.Header, compression BlobCompression) error {
 	bbox := hdr.BoundingBox
 	hb := &pb.HeaderBlock{
 		Bbox: &pb.HeaderBBox{
@@ -31,7 +31,7 @@ func SaveHeader(wrtr io.Writer, hdr *model.Header, compression BlobCompression) 
 		OsmosisReplicationBaseUrl:        proto.String(hdr.OsmosisReplicationBaseURL),
 	}
 
-	if err := writeBlob(wrtr, hb, compression); err != nil {
+	if err := writeBlob(w, hb, compression); err != nil {
 		return fmt.Errorf("could not write header: %w", err)
 	}
 

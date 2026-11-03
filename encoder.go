@@ -22,13 +22,13 @@ const (
 	singleCPU = 5
 )
 
-// Encoder wr and decodes OpenStreetMap PBF data to an input stream.
+// Encoder encodes OpenStreetMap PBF data to an output stream.
 type Encoder struct {
 	Header   model.Header
 	Entities chan<- []model.Entity
 
-	cfg  *encoderOptions
-	wrtr io.Writer
+	cfg *encoderOptions
+	w   io.Writer
 
 	err   error
 	close sync.Once
@@ -37,9 +37,9 @@ type Encoder struct {
 	closed    sync.WaitGroup
 }
 
-// NewEncoder returns a new encoder, configured with options, that reads from
-// reader.  The decoder is initialized with the OSM header.
-func NewEncoder(wrtr io.Writer, opts ...EncoderOption) (*Encoder, error) {
+// NewEncoder returns a new encoder, configured with opts, that writes to w.
+// The encoder writes the OSM header before the data.
+func NewEncoder(w io.Writer, opts ...EncoderOption) (*Encoder, error) {
 	cfg := defaultEncoderConfig
 
 	for _, opt := range opts {
@@ -62,8 +62,8 @@ func NewEncoder(wrtr io.Writer, opts ...EncoderOption) (*Encoder, error) {
 			OsmosisReplicationBaseURL:        cfg.osmosisReplicationBaseURL,
 		},
 
-		cfg:  &cfg,
-		wrtr: wrtr,
+		cfg: &cfg,
+		w:   w,
 	}
 
 	entities := make(chan []model.Entity)
@@ -74,7 +74,7 @@ func NewEncoder(wrtr io.Writer, opts ...EncoderOption) (*Encoder, error) {
 	inspected, bboxes := encoder.ExtractBoundingBoxes(coalesced)
 	encoded := rill.OrderedMap(inspected, singleCPU, encoder.EncodeBatch)
 	packed := rill.OrderedMap(encoded, singleCPU, encoder.GenerateBatchPacker(cfg.compression))
-	statuses := encoder.SavePacked(cfg.wrtr, packed)
+	statuses := encoder.SavePacked(cfg.w, packed)
 
 	// writeHeaderAndBody() will wait for these two consumers to complete
 	e.completed.Add(numConsumers)
@@ -143,21 +143,21 @@ func (e *Encoder) writeHeaderAndBody() {
 
 	e.completed.Wait()
 
-	if err := e.cfg.wrtr.Sync(); err != nil {
+	if err := e.cfg.w.Sync(); err != nil {
 		panic(fmt.Errorf("cannot sync batch: %w", err))
 	}
 
-	if offset, err := e.cfg.wrtr.Seek(0, io.SeekStart); err != nil {
+	if offset, err := e.cfg.w.Seek(0, io.SeekStart); err != nil {
 		panic(fmt.Errorf("cannot seek to beginning of file: %w", err))
 	} else if offset != 0 {
 		panic("cannot seek to beginning of file")
 	}
 
-	if err := encoder.SaveHeader(e.wrtr, &e.Header, e.cfg.compression); err != nil {
+	if err := encoder.SaveHeader(e.w, &e.Header, e.cfg.compression); err != nil {
 		panic(fmt.Sprintf("error writing header: %v", err))
 	}
 
-	if _, err := io.Copy(e.wrtr, e.cfg.wrtr); err != nil {
+	if _, err := io.Copy(e.w, e.cfg.w); err != nil {
 		panic(fmt.Sprintf("error copying entities file: %v", err))
 	}
 }

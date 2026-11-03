@@ -6,13 +6,13 @@ package encoder
 import "io"
 
 type Context struct {
-	wrtr        io.Writer
+	w           io.Writer
 	compression BlobCompression
 }
 
-func NewContext(wrtr io.Writer, compression BlobCompression) *Context {
+func NewContext(w io.Writer, compression BlobCompression) *Context {
 	return &Context{
-		wrtr:        wrtr,
+		w:           w,
 		compression: compression,
 	}
 }

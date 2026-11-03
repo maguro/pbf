@@ -14,8 +14,8 @@ import (
 )
 
 // writeBlob marshals a Protobuf Message, msg, into a PBF blob and writes its
-// blob header and blob data to the wrtr.
-func writeBlob(wrtr io.Writer, msg proto.Message, c BlobCompression) (err error) {
+// blob header and blob data to w.
+func writeBlob(w io.Writer, msg proto.Message, c BlobCompression) (err error) {
 	bb, err := Pack(msg, c)
 	if err != nil {
 		return fmt.Errorf("could not marshal blob data: %w", err)
@@ -32,15 +32,15 @@ func writeBlob(wrtr io.Writer, msg proto.Message, c BlobCompression) (err error)
 	}
 
 	//nolint:gosec // A BlobHeader is much smaller than the 64 KiB limit.
-	if err = binary.Write(wrtr, binary.BigEndian, uint32(len(hb))); err != nil {
+	if err = binary.Write(w, binary.BigEndian, uint32(len(hb))); err != nil {
 		return fmt.Errorf("could not write header size: %w", err)
 	}
 
-	if _, err = wrtr.Write(hb); err != nil {
+	if _, err = w.Write(hb); err != nil {
 		return fmt.Errorf("could not write blob header: %w", err)
 	}
 
-	if _, err = wrtr.Write(bb); err != nil {
+	if _, err = w.Write(bb); err != nil {
 		return fmt.Errorf("could not write blob data: %w", err)
 	}
 
