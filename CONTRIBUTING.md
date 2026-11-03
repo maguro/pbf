@@ -37,6 +37,16 @@ the encoder needs agreement before work starts.
 4. Open a pull request against `master`. Refer to the related issue in the
    description.
 
+To round-trip a PBF file that is not in `testdata`, such as a planet file,
+give its path to the integration test with the `-pbf` flag:
+
+```sh
+go test -tags=integration -run TestRoundTripOSMPBFDatasets -timeout 0 . -pbf /path/to/planet.osm.pbf
+```
+
+The test writes two copies of the file to the directory that `TMPDIR`
+names. Set `TMPDIR` to a disk with enough free space.
+
 The maintainer reviews each pull request. CI must pass before a merge.
 
 The Makefile keeps the Go and lint caches in a `.cache/` directory in the

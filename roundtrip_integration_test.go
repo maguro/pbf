@@ -7,15 +7,17 @@
 package pbf
 
 import (
-	"bytes"
+	"bufio"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"flag"
 	"fmt"
 	"hash"
 	"io"
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"testing"
@@ -23,6 +25,12 @@ import (
 
 	"m4o.io/pbf/v2/model"
 )
+
+// pbfPath names one PBF file to round-trip in place of the files in
+// testdata. The test writes the encoded copy and the encoder store to the
+// directory that TMPDIR names. Because of this, that directory must have
+// space for two copies of the file.
+var pbfPath = flag.String("pbf", "", "round-trip this PBF file in place of the files in testdata")
 
 type entityDigest struct {
 	total     int
@@ -45,15 +53,22 @@ type multisetHasher struct {
 func TestRoundTripOSMPBFDatasets(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct {
+	type testCase struct {
 		name              string
 		path              string
 		compareNodeDigest bool
-	}{
+	}
+
+	testCases := []testCase{
 		{name: "sample", path: "testdata/sample.osm.pbf", compareNodeDigest: true},
 		{name: "bremen", path: "testdata/bremen.osm.pbf", compareNodeDigest: true},
 		{name: "london", path: "testdata/greater-london.osm.pbf", compareNodeDigest: true},
 		{name: "san-francisco", path: "testdata/san-francisco.osm.pbf", compareNodeDigest: true},
+	}
+
+	if *pbfPath != "" {
+		name := filepath.Base(*pbfPath)
+		testCases = []testCase{{name: name, path: *pbfPath, compareNodeDigest: true}}
 	}
 
 	for _, tc := range testCases {
@@ -70,8 +85,15 @@ func TestRoundTripOSMPBFDatasets(t *testing.T) {
 			}
 			defer decoded.Close()
 
-			var encoded bytes.Buffer
-			reencoded, err := NewEncoder(&encoded, headerOptions(decoded.Header)...)
+			encodedPath := filepath.Join(t.TempDir(), "roundtrip.osm.pbf")
+			encoded, err := os.Create(encodedPath)
+			if err != nil {
+				t.Fatalf("create %s: %v", encodedPath, err)
+			}
+			defer encoded.Close()
+
+			buffered := bufio.NewWriter(encoded)
+			reencoded, err := NewEncoder(buffered, headerOptions(decoded.Header)...)
 			if err != nil {
 				t.Fatalf("create encoder: %v", err)
 			}
@@ -83,7 +105,14 @@ func TestRoundTripOSMPBFDatasets(t *testing.T) {
 
 			reencoded.Close()
 
-			roundTrip, err := NewDecoder(context.Background(), bytes.NewReader(encoded.Bytes()))
+			if err := buffered.Flush(); err != nil {
+				t.Fatalf("flush %s: %v", encodedPath, err)
+			}
+			if _, err := encoded.Seek(0, io.SeekStart); err != nil {
+				t.Fatalf("rewind %s: %v", encodedPath, err)
+			}
+
+			roundTrip, err := NewDecoder(context.Background(), encoded)
 			if err != nil {
 				t.Fatalf("create round-trip decoder: %v", err)
 			}
