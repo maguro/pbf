@@ -4,7 +4,7 @@ OpenStreetMap PBF golang encoder/decoder
 [![Build Status](https://github.com/maguro/pbf/actions/workflows/ci.yml/badge.svg)](https://github.com/maguro/pbf/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/maguro/pbf/badge)](https://scorecard.dev/viewer/?uri=github.com/maguro/pbf)
 [![Coverage Status](https://coveralls.io/repos/github/maguro/pbf/badge.svg?branch=master)](https://coveralls.io/github/maguro/pbf?branch=master)
-[![Documentation](https://godoc.org/github.com/maguro/pbf?status.svg)](http://godoc.org/github.com/maguro/pbf)
+[![Documentation](https://pkg.go.dev/badge/m4o.io/pbf/v2.svg)](https://pkg.go.dev/m4o.io/pbf/v2)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 A golang based OpenStreetMap PBF encoder/decoder with a handy command line utility, `pbf`.
