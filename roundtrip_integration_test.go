@@ -315,6 +315,7 @@ func (h *multisetHasher) Digest() [sha256.Size]byte {
 
 func writeNode(h hash.Hash, n model.Node) {
 	writeInt64(h, int64(n.ID))
+	writeInfo(h, n.Info)
 	writeTags(h, n.Tags)
 	writeInt64(h, model.ToCoordinate(0, 100, n.Lat))
 	writeInt64(h, model.ToCoordinate(0, 100, n.Lon))
