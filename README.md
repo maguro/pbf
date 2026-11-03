@@ -217,7 +217,8 @@ Rules for encoding:
 Header options: `WithWritingProgram`, `WithSource`, `WithRequiredFeatures`
 (added to the defaults), `WithOptionalFeatures`,
 `WithOsmosisReplicationTimestamp`, `WithOsmosisReplicationSequenceNumber`,
-and `WithOsmosisReplicationBaseURL`.
+and `WithOsmosisReplicationBaseURL`. The two feature options add to the
+features of earlier calls and remove duplicate features.
 
 ## Go Version Support
 

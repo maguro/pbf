@@ -57,6 +57,66 @@ func TestNewEncoderSetsSpecRequiredFeatures(t *testing.T) {
 	}
 }
 
+func TestNewEncoderFeatureOptionsAppendAndDeduplicate(t *testing.T) {
+	t.Parallel()
+
+	defaults := []string{"OsmSchema-V0.6", "DenseNodes"}
+
+	testCases := []struct {
+		name         string
+		opts         []EncoderOption
+		wantRequired []string
+		wantOptional []string
+	}{
+		{
+			name:         "required keeps defaults",
+			opts:         []EncoderOption{WithRequiredFeatures("Acme-Custom")},
+			wantRequired: append(slices.Clone(defaults), "Acme-Custom"),
+		},
+		{
+			name:         "required removes duplicates of defaults",
+			opts:         []EncoderOption{WithRequiredFeatures("DenseNodes", "Acme-Custom", "OsmSchema-V0.6")},
+			wantRequired: append(slices.Clone(defaults), "Acme-Custom"),
+		},
+		{
+			name: "required accumulates across calls",
+			opts: []EncoderOption{
+				WithRequiredFeatures("Acme-A", "Acme-B"),
+				WithRequiredFeatures("Acme-B", "Acme-C"),
+			},
+			wantRequired: append(slices.Clone(defaults), "Acme-A", "Acme-B", "Acme-C"),
+		},
+		{
+			name: "optional accumulates and removes duplicates",
+			opts: []EncoderOption{
+				WithOptionalFeatures("Has_Metadata", "Sort.Type_then_ID"),
+				WithOptionalFeatures("Sort.Type_then_ID"),
+			},
+			wantRequired: defaults,
+			wantOptional: []string{"Has_Metadata", "Sort.Type_then_ID"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			enc, err := NewEncoder(&bytes.Buffer{}, tc.opts...)
+			if err != nil {
+				t.Fatalf("create encoder: %v", err)
+			}
+			defer enc.Close()
+
+			if got := enc.Header.RequiredFeatures; !slices.Equal(got, tc.wantRequired) {
+				t.Errorf("required features = %q, want %q", got, tc.wantRequired)
+			}
+			if got := enc.Header.OptionalFeatures; !slices.Equal(got, tc.wantOptional) {
+				t.Errorf("optional features = %q, want %q", got, tc.wantOptional)
+			}
+		})
+	}
+}
+
 // TestRoundTripDropsDenseNodeVisibility checks that each node decodes with
 // Visible set to true, also the node that the test encodes with Visible set to
 // false. The encoder does not write the visible flag, and the decoder sets

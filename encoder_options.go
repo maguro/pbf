@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"time"
 
 	"m4o.io/pbf/v2/internal/encoder"
@@ -60,17 +61,22 @@ func WithStorePath(dir string) EncoderOption {
 	}
 }
 
-// WithRequiredFeatures sets the required features of the PBF header.
+// WithRequiredFeatures adds required features to the PBF header. The default
+// features stay in the header. The features of an earlier call also stay in
+// the header. The encoder keeps the first occurrence of each feature and
+// removes the duplicates.
 func WithRequiredFeatures(features ...string) EncoderOption {
 	return func(o *encoderOptions) {
-		o.requiredFeatures = append(o.requiredFeatures, features...)
+		o.requiredFeatures = appendFeatures(o.requiredFeatures, features)
 	}
 }
 
-// WithOptionalFeatures sets the optional features of the PBF header.
+// WithOptionalFeatures adds optional features to the PBF header. The features
+// of an earlier call stay in the header. The encoder keeps the first
+// occurrence of each feature and removes the duplicates.
 func WithOptionalFeatures(features ...string) EncoderOption {
 	return func(o *encoderOptions) {
-		o.optionalFeatures = append(o.optionalFeatures, features...)
+		o.optionalFeatures = appendFeatures(o.optionalFeatures, features)
 	}
 }
 
@@ -141,4 +147,24 @@ func initializeTempStore(o *encoderOptions) error {
 	o.w = w
 
 	return nil
+}
+
+// appendFeatures returns a new slice with the features of current, followed by
+// the features of added that current does not contain. The result has no
+// duplicates. appendFeatures never writes to the array of current, because
+// current can share its array with defaultEncoderConfig.
+func appendFeatures(current, added []string) []string {
+	seen := make(map[string]struct{}, len(current)+len(added))
+	result := make([]string, 0, len(current)+len(added))
+
+	for _, feature := range slices.Concat(current, added) {
+		if _, ok := seen[feature]; ok {
+			continue
+		}
+
+		seen[feature] = struct{}{}
+		result = append(result, feature)
+	}
+
+	return result
 }
