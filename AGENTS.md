@@ -40,12 +40,6 @@ Use these skills from `.claude/skills/` when the task matches:
 For each change, run `make fmt`, `make test`, and `make lint`. Run `make check`
 before merge.
 
-## Code review
-
-Before you report a defect that existed before the change, search the open
-issues. If an issue covers the defect, give the issue number. Do not describe
-the defect again.
-
 ## Hot paths
 
 The `go-benchmarks` skill applies to these paths:
