@@ -118,7 +118,6 @@ var defaultEncoderConfig = encoderOptions{
 	requiredFeatures: []string{
 		featureOSMSchema,
 		featureDenseNodes,
-		featureHistoricalInformation,
 	},
 }
 

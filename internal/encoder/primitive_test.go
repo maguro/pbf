@@ -68,3 +68,29 @@ func TestToInfoPbKeepsTimestampsAfter2038(t *testing.T) {
 
 	assert.Equal(t, int64(seconds), pbInfo.GetTimestamp())
 }
+
+// TestToInfoPbOmitsVisible checks that the encoder writes no visible flag. A
+// current data file does not declare HistoricalInformation, so the spec does
+// not let the writer set the flag.
+func TestToInfoPbOmitsVisible(t *testing.T) {
+	strings := NewStrings()
+	strings.Add("")
+	table := strings.CalcTable()
+
+	pbInfo := toInfoPb(&model.Info{Visible: false}, table)
+
+	assert.Nil(t, pbInfo.Visible)
+}
+
+// TestExtractDenseNodesOmitsVisible checks the dense node path for the same
+// rule as TestToInfoPbOmitsVisible.
+func TestExtractDenseNodesOmitsVisible(t *testing.T) {
+	entities := []model.Entity{
+		&model.Node{ID: 1, Info: &model.Info{Visible: false}},
+		&model.Node{ID: 2, Info: &model.Info{Visible: true}},
+	}
+
+	dense := newBlockContext(entities).extractDenseNodes()
+
+	assert.Empty(t, dense.GetDenseinfo().GetVisible())
+}

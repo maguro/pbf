@@ -52,12 +52,16 @@ func TestNewEncoderSetsSpecRequiredFeatures(t *testing.T) {
 	if !slices.Contains(required, requiredFeatureDenseNodes) {
 		t.Fatalf("missing required feature %q in %#v", requiredFeatureDenseNodes, required)
 	}
-	if !slices.Contains(required, requiredFeatureHistoricalInformation) {
-		t.Fatalf("missing required feature %q in %#v", requiredFeatureHistoricalInformation, required)
+	if slices.Contains(required, requiredFeatureHistoricalInformation) {
+		t.Fatalf("unexpected required feature %q in %#v", requiredFeatureHistoricalInformation, required)
 	}
 }
 
-func TestRoundTripPreservesDenseNodeVisibility(t *testing.T) {
+// TestRoundTripDropsDenseNodeVisibility checks that each node decodes with
+// Visible set to true, also the node that the test encodes with Visible set to
+// false. The encoder does not write the visible flag, and the decoder sets
+// Visible to true when the flag is not there.
+func TestRoundTripDropsDenseNodeVisibility(t *testing.T) {
 	t.Parallel()
 
 	nodes := []model.Entity{
@@ -132,8 +136,8 @@ func TestRoundTripPreservesDenseNodeVisibility(t *testing.T) {
 
 	if got, ok := gotVisibility[1001]; !ok {
 		t.Fatalf("missing node 1001 from decoded output: %#v", gotVisibility)
-	} else if got {
-		t.Fatalf("node 1001 visibility mismatch: got %t want %t", got, false)
+	} else if !got {
+		t.Fatalf("node 1001 visibility mismatch: got %t want %t", got, true)
 	}
 	if got, ok := gotVisibility[1002]; !ok {
 		t.Fatalf("missing node 1002 from decoded output: %#v", gotVisibility)

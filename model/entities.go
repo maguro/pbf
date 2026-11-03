@@ -20,7 +20,10 @@ type Info struct {
 	Timestamp time.Time
 	Changeset int64
 	User      string
-	Visible   bool
+	// Visible is false for a deleted version in a history file. The encoder
+	// does not write the visible flag. Thus each entity in a file that the
+	// encoder writes decodes with Visible set to true.
+	Visible bool
 }
 
 type Entity interface {

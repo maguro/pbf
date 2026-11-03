@@ -127,7 +127,6 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 	ts := make([]int64, 0)
 	cs := make([]int64, 0)
 	usids := make([]int32, 0)
-	visible := make([]bool, 0)
 
 	keyValIDs := make([]int32, 0)
 
@@ -153,7 +152,6 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 		ts = append(ts, fromTimestamp(DateGranularityMs, info.Timestamp))
 		cs = append(cs, info.Changeset)
 		usids = append(usids, bc.table.IndexOf(info.User))
-		visible = append(visible, info.Visible)
 
 		kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
 		for i, k := range kIDs {
@@ -170,7 +168,6 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 		Changeset: calcDeltas(cs),
 		Uid:       calcDeltas(uids),
 		UserSid:   calcDeltas(usids),
-		Visible:   visible,
 	}
 	dn.Lat = calcDeltas(lats)
 	dn.Lon = calcDeltas(lons)
@@ -302,7 +299,6 @@ func toInfoPb(info *model.Info, table *Table) *pb.Info {
 		Changeset: proto.Int64(info.Changeset),
 		Uid:       proto.Int32(int32(info.UID)),
 		UserSid:   proto.Uint32(uint32(table.IndexOf(info.User))), //nolint:gosec // IndexOf returns an index that is not negative.
-		Visible:   proto.Bool(info.Visible),
 	}
 
 	return pbInfo

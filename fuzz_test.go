@@ -200,6 +200,11 @@ func normalizeInfo(info *model.Info) *model.Info {
 	seconds := i.Timestamp.Unix()
 	i.Timestamp = time.Unix(seconds, 0).UTC()
 
+	// The encoder writes a current data file, which has no visible flag. The
+	// decoder sets Visible to true when the flag is not there. Thus the visible
+	// fuzz value has no effect on the result.
+	i.Visible = true
+
 	return &i
 }
 

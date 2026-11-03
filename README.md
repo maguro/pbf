@@ -208,8 +208,10 @@ Rules for encoding:
 
 - Pass `*model.Node`, `*model.Way`, and `*model.Relation` pointers.
 - Set `Info` on every entity. A nil `Info` causes a panic.
-- Set `Info.Visible` to `true` for current data. The default header requires
-  `HistoricalInformation`, so `Visible: false` marks a deleted entity.
+- The encoder writes current data files. It does not write the `visible` flag,
+  so every entity decodes with `Info.Visible` set to `true`. The encoder drops
+  `Visible: false` and gives no error. The encoder does not write history
+  files ([#24](https://github.com/maguro/pbf/issues/24)).
 - Do not call `Encode` or `EncodeBatch` after `Close`.
 
 Header options: `WithWritingProgram`, `WithSource`, `WithRequiredFeatures`
