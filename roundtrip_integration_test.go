@@ -29,7 +29,6 @@ type entityDigest struct {
 	nodes     int
 	ways      int
 	relations int
-	sum       [sha256.Size]byte
 	nodeSum   [sha256.Size]byte
 	waySum    [sha256.Size]byte
 	relSum    [sha256.Size]byte
@@ -155,7 +154,6 @@ func assertHeader(t *testing.T, source model.Header, extent *model.BoundingBox, 
 }
 
 func digestAndEncode(dec *Decoder, enc *Encoder) (entityDigest, error) {
-	hasher := multisetHasher{}
 	nodeHasher := multisetHasher{}
 	wayHasher := multisetHasher{}
 	relHasher := multisetHasher{}
@@ -170,7 +168,7 @@ func digestAndEncode(dec *Decoder, enc *Encoder) (entityDigest, error) {
 			return entityDigest{}, fmt.Errorf("decode source: %w", err)
 		}
 
-		if err := digestEntities(&hasher, &nodeHasher, &wayHasher, &relHasher, &stats, entities); err != nil {
+		if err := digestEntities(&nodeHasher, &wayHasher, &relHasher, &stats, entities); err != nil {
 			return entityDigest{}, err
 		}
 
@@ -179,7 +177,6 @@ func digestAndEncode(dec *Decoder, enc *Encoder) (entityDigest, error) {
 		}
 	}
 
-	stats.sum = hasher.Digest()
 	stats.nodeSum = nodeHasher.Digest()
 	stats.waySum = wayHasher.Digest()
 	stats.relSum = relHasher.Digest()
@@ -188,7 +185,6 @@ func digestAndEncode(dec *Decoder, enc *Encoder) (entityDigest, error) {
 }
 
 func digestDecoder(dec *Decoder) (entityDigest, error) {
-	hasher := multisetHasher{}
 	nodeHasher := multisetHasher{}
 	wayHasher := multisetHasher{}
 	relHasher := multisetHasher{}
@@ -203,12 +199,11 @@ func digestDecoder(dec *Decoder) (entityDigest, error) {
 			return entityDigest{}, fmt.Errorf("decode: %w", err)
 		}
 
-		if err := digestEntities(&hasher, &nodeHasher, &wayHasher, &relHasher, &stats, entities); err != nil {
+		if err := digestEntities(&nodeHasher, &wayHasher, &relHasher, &stats, entities); err != nil {
 			return entityDigest{}, err
 		}
 	}
 
-	stats.sum = hasher.Digest()
 	stats.nodeSum = nodeHasher.Digest()
 	stats.waySum = wayHasher.Digest()
 	stats.relSum = relHasher.Digest()
@@ -216,34 +211,28 @@ func digestDecoder(dec *Decoder) (entityDigest, error) {
 	return stats, nil
 }
 
-func digestEntities(hasher, nodeHasher, wayHasher, relHasher *multisetHasher, stats *entityDigest, entities []model.Entity) error {
+func digestEntities(nodeHasher, wayHasher, relHasher *multisetHasher, stats *entityDigest, entities []model.Entity) error {
 	for _, entity := range entities {
 		stats.total++
 		switch typed := entity.(type) {
 		case model.Node:
 			stats.nodes++
-			hasher.AddNode(typed)
 			nodeHasher.AddNode(typed)
 		case *model.Node:
 			stats.nodes++
-			hasher.AddNode(*typed)
 			nodeHasher.AddNode(*typed)
 			stats.extent.ExpandWithLatLng(typed.Lat, typed.Lon)
 		case model.Way:
 			stats.ways++
-			hasher.AddWay(typed)
 			wayHasher.AddWay(typed)
 		case *model.Way:
 			stats.ways++
-			hasher.AddWay(*typed)
 			wayHasher.AddWay(*typed)
 		case model.Relation:
 			stats.relations++
-			hasher.AddRelation(typed)
 			relHasher.AddRelation(typed)
 		case *model.Relation:
 			stats.relations++
-			hasher.AddRelation(*typed)
 			relHasher.AddRelation(*typed)
 		default:
 			return fmt.Errorf("unknown entity type %T", entity)
