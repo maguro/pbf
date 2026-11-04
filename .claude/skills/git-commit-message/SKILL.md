@@ -47,8 +47,11 @@ Return **only** the commit message text in this structure:
 1. Identify the single primary purpose of the change.
 2. Draft 2–3 candidate subject lines and choose the best.
 3. Write the subject as an imperative that names what the commit
-   changes, not how the code behaves afterward. For a bug fix, name
-   the fix.
+   does to the code, not what the code does when it runs. The verb
+   must act on the code: for example “Add”, “Remove”, “Change”,
+   “Make”, “Move”, “Rename”, “Restore”, or “Fix”. The rule 5 test
+   does not find this error, because “this commit will reuse zstd
+   encoders” is grammatical. For a bug fix, name the fix.
 4. Include a body if rationale or behavior change needs explanation.
 5. Add issue references only if explicitly present in context.
 
@@ -79,6 +82,10 @@ Return **only** the commit message text in this structure:
 - Subject starts lowercase → fix
 - Subject ends with “.” → remove
 - Subject is past tense → convert to imperative
+- Subject verb is an action that the code does when it runs (e.g.
+  “Reuse”, “Cache”, “Skip”, “Keep”) → rewrite with a verb that acts
+  on the code, and name the changed part: “Change zstd packer to
+  reuse encoders”
 - Commit fixes a bug or brings back lost behavior, but the subject
   states that behavior as if it always held (e.g. “Keep X”) → name
   the fix: “Restore X” only if the context shows an earlier commit
@@ -98,6 +105,11 @@ Return **only** the commit message text in this structure:
 Bug fix ("Keep file order in the decoder output" hides the fix):
 
 Restore file order in the decoder output
+
+Behavior change ("Reuse zstd encoders across blocks" names what the
+code does, not what the commit does):
+
+Change zstd packer to reuse encoders
 
 Simple:
 
