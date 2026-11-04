@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"m4o.io/pbf/v2/internal/encoder"
 	"m4o.io/pbf/v2/model"
 )
 
@@ -76,4 +77,50 @@ func publicDecodeOsmPbf(t *testing.T, file string, expectedEntries int) {
 	}
 
 	assert.Equal(t, expectedEntries, nEntries, "Incorrect number of entities")
+}
+
+func TestDecoderKeepsFileOrder(t *testing.T) {
+	t.Parallel()
+
+	const nBlocks = 32
+
+	nEntities := nBlocks * encoder.EntityLimit
+
+	var encoded bytes.Buffer
+
+	enc, err := NewEncoder(&encoded)
+	require.NoError(t, err)
+
+	for id := range nEntities {
+		node := &model.Node{ID: model.ID(id), Info: &model.Info{Visible: true}}
+		require.NoError(t, enc.Encode(node))
+	}
+
+	enc.Close()
+
+	dec, err := NewDecoder(context.Background(), bytes.NewReader(encoded.Bytes()), WithNCpus(4), WithProtoBatchSize(1))
+	require.NoError(t, err)
+
+	defer dec.Close()
+
+	var got []model.ID
+
+	for {
+		batch, err := dec.Decode()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		require.NoError(t, err)
+
+		for _, entity := range batch {
+			got = append(got, entity.GetID())
+		}
+	}
+
+	require.Len(t, got, nEntities)
+
+	for i, id := range got {
+		require.Equal(t, model.ID(i), id, "entity %d", i)
+	}
 }

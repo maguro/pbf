@@ -15,8 +15,11 @@ import (
 
 // DecodeBatch unpacks a batch of primitive blobs and parses them into
 // primitive blocks which are subsequently sent down the out channel.
+// The out channel can hold one block for each blob in the batch. Thus
+// DecodeBatch can decode all blobs of the batch before the caller reads
+// from out.
 func DecodeBatch(array []*pb.Blob) (out <-chan rill.Try[[]model.Entity]) {
-	ch := make(chan rill.Try[[]model.Entity])
+	ch := make(chan rill.Try[[]model.Entity], len(array))
 	out = ch
 
 	buf := core.NewPooledBuffer()

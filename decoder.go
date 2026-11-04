@@ -56,7 +56,7 @@ func NewDecoder(ctx context.Context, r io.Reader, opts ...DecoderOption) (*Decod
 
 	batches := rill.Batch(blobs, cfg.protoBatchSize, time.Second)
 
-	entities := rill.FlatMap(batches, int(cfg.nCPU), decoder.DecodeBatch)
+	entities := rill.OrderedFlatMap(batches, int(cfg.nCPU), decoder.DecodeBatch)
 
 	d.Entities = entities
 
