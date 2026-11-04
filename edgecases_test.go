@@ -23,9 +23,8 @@ import (
 // the case ID. The package doc of internal/edgecases tells what each case
 // covers.
 //
-// The encoder writes the blocks of each entity type in any order. Within one
-// type, the decoder returns the entities in the order of the cases. Thus the
-// test matches the entities of each type to the cases of that type, in order.
+// The encoder keeps the order of the entities. Thus the decoder returns the
+// entities in the order of the cases.
 func TestEdgeCasesFixture(t *testing.T) {
 	t.Parallel()
 
@@ -39,7 +38,7 @@ func TestEdgeCasesFixture(t *testing.T) {
 
 	defer dec.Close()
 
-	got := map[model.EntityType][]model.Entity{}
+	var got []model.Entity
 
 	for {
 		batch, err := dec.Decode()
@@ -49,30 +48,15 @@ func TestEdgeCasesFixture(t *testing.T) {
 
 		require.NoError(t, err)
 
-		for _, entity := range batch {
-			entityType := typeOf(t, entity)
-			got[entityType] = append(got[entityType], entity)
-		}
+		got = append(got, batch...)
 	}
 
-	want := map[model.EntityType][]edgecases.Case{}
+	cases := edgecases.Cases()
 
-	for _, c := range edgecases.Cases() {
-		entityType := typeOf(t, c.Entity)
-		want[entityType] = append(want[entityType], c)
-	}
+	require.Len(t, got, len(cases), "number of entities")
 
-	for _, entityType := range []model.EntityType{model.NODE, model.WAY, model.RELATION} {
-		cases := want[entityType]
-		decoded := got[entityType]
-
-		require.Len(t, decoded, len(cases), "number of %s entities", entityType)
-
-		for i, c := range cases {
-			wantEntity := normalizeEdgeCase(c.Entity)
-			gotEntity := normalizeEdgeCase(decoded[i])
-			assert.Equal(t, wantEntity, gotEntity, "case %s: %s", c.ID, c.Covers)
-		}
+	for i, c := range cases {
+		assert.Equal(t, normalizeEdgeCase(c.Entity), normalizeEdgeCase(got[i]), "case %s: %s", c.ID, c.Covers)
 	}
 
 	assertEdgeCasesHeader(t, &dec.Header)
@@ -119,21 +103,4 @@ func normalizeEdgeCase(entity model.Entity) model.Entity {
 	}
 
 	return normalized
-}
-
-func typeOf(t *testing.T, entity model.Entity) model.EntityType {
-	t.Helper()
-
-	switch entity.(type) {
-	case *model.Node:
-		return model.NODE
-	case *model.Way:
-		return model.WAY
-	case *model.Relation:
-		return model.RELATION
-	default:
-		t.Fatalf("unknown entity type %T", entity)
-
-		return 0
-	}
 }

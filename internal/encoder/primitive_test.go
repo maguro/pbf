@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"m4o.io/pbf/v2/model"
 )
@@ -90,7 +91,38 @@ func TestExtractDenseNodesOmitsVisible(t *testing.T) {
 		&model.Node{ID: 2, Info: &model.Info{Visible: true}},
 	}
 
-	dense := newBlockContext(entities).extractDenseNodes()
+	dense := newBlockContext(entities).extractDenseNodes(entities)
 
 	assert.Empty(t, dense.GetDenseinfo().GetVisible())
+}
+
+func TestExtractPrimitiveBlockGroupsRunsInOrder(t *testing.T) {
+	t.Parallel()
+
+	info := func() *model.Info { return &model.Info{Visible: true} }
+
+	entities := []model.Entity{
+		&model.Node{ID: 1, Info: info()},
+		&model.Node{ID: 2, Info: info()},
+		&model.Way{ID: 10, Info: info()},
+		&model.Relation{ID: 20, Info: info()},
+		&model.Node{ID: 5, Info: info()},
+	}
+
+	groups := newBlockContext(entities).extractPrimitiveBlock().GetPrimitivegroup()
+
+	require.Len(t, groups, 4)
+
+	// The dense IDs are deltas. Each group starts its deltas from zero.
+	assert.Equal(t, []int64{1, 1}, groups[0].GetDense().GetId())
+	assert.Empty(t, groups[0].GetWays())
+
+	require.Len(t, groups[1].GetWays(), 1)
+	assert.Equal(t, int64(10), groups[1].GetWays()[0].GetId())
+	assert.Nil(t, groups[1].GetDense())
+
+	require.Len(t, groups[2].GetRelations(), 1)
+	assert.Equal(t, int64(20), groups[2].GetRelations()[0].GetId())
+
+	assert.Equal(t, []int64{5}, groups[3].GetDense().GetId())
 }

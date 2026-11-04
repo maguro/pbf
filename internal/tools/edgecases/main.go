@@ -7,9 +7,7 @@
 //
 //	go run ./internal/tools/edgecases -o testdata/edge-cases.osm.pbf
 //
-// The encoder writes the blocks of each entity type in a different order on
-// each run. Thus two runs give files with different bytes and the same
-// entities.
+// Each run writes a file with the same bytes.
 package main
 
 import (

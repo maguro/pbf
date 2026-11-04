@@ -12,31 +12,39 @@ import (
 	"m4o.io/pbf/v2/model"
 )
 
+// Coalesce puts the entities from in into batches of size entities. The last
+// batch can hold fewer entities. A batch can hold entities of more than one
+// type. The batches keep the order of the entities in in. Coalesce drops a nil
+// entity.
 func Coalesce(in <-chan []model.Entity, size int) <-chan rill.Try[[]model.Entity] {
-	nch := make(chan rill.Try[model.Entity])
-	rch := make(chan rill.Try[model.Entity])
-	wch := make(chan rill.Try[model.Entity])
+	out := make(chan rill.Try[[]model.Entity])
 
 	go func() {
-		defer close(nch)
-		defer close(rch)
-		defer close(wch)
+		defer close(out)
+
+		batch := make([]model.Entity, 0, size)
 
 		for entities := range in {
 			for _, e := range entities {
-				o := rill.Try[model.Entity]{Value: e}
-				nch <- o
-				rch <- o
-				wch <- o
+				if e == nil {
+					continue
+				}
+
+				batch = append(batch, e)
+
+				if len(batch) == size {
+					out <- rill.Wrap(batch, nil)
+					batch = make([]model.Entity, 0, size)
+				}
 			}
+		}
+
+		if len(batch) > 0 {
+			out <- rill.Wrap(batch, nil)
 		}
 	}()
 
-	bn := batchEntities[*model.Node](nch, size)
-	br := batchEntities[*model.Relation](rch, size)
-	bw := batchEntities[*model.Way](wch, size)
-
-	return rill.Merge(bn, br, bw)
+	return out
 }
 
 func ExtractBoundingBoxes(
@@ -68,16 +76,6 @@ func ExtractBoundingBoxes(
 	}()
 
 	return ech, bch
-}
-
-func batchEntities[T model.Entity](in <-chan rill.Try[model.Entity], size int) <-chan rill.Try[[]model.Entity] {
-	nodes := rill.OrderedFilter(in, 1, func(object model.Entity) (bool, error) {
-		_, ok := object.(T)
-
-		return ok, nil
-	})
-
-	return rill.Batch(nodes, size, -1)
 }
 
 func EncodeBatch(batch []model.Entity) (*pb.PrimitiveBlock, error) {

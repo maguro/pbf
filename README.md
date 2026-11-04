@@ -213,6 +213,10 @@ Rules for encoding:
   `Visible: false` and gives no error. The encoder does not write history
   files ([#24](https://github.com/maguro/pbf/issues/24)).
 - Do not call `Encode` or `EncodeBatch` after `Close`.
+- The encoder writes the entities in the order that you give them, and it does
+  not sort them. Thus a file is sorted only if you give sorted entities. To
+  declare that the entities are sorted by type and then by ID, add the optional
+  feature `Sort.Type_then_ID`. The encoder does not check that feature.
 
 Header options: `WithWritingProgram`, `WithSource`, `WithRequiredFeatures`
 (added to the defaults), `WithOptionalFeatures`,

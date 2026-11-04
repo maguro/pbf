@@ -87,24 +87,28 @@ func newBlockContext(entities []model.Entity) *blockContext {
 	}
 }
 
+// extractPrimitiveBlock returns a block with one primitive group for each run
+// of entities of the same type. The groups keep the order of the entities.
 func (bc *blockContext) extractPrimitiveBlock() *pb.PrimitiveBlock {
-	pg := &pb.PrimitiveGroup{}
-	switch bc.entities[0].(type) {
-	case *model.Node:
-		pg.Dense = bc.extractDenseNodes()
-	case *model.Way:
-		pg.Ways = bc.extractWays()
-	case *model.Relation:
-		pg.Relations = bc.extractRelations()
-	default:
-		panic("unknown type")
+	var groups []*pb.PrimitiveGroup
+
+	for start := 0; start < len(bc.entities); {
+		runType := entityType(bc.entities[start])
+
+		end := start + 1
+		for end < len(bc.entities) && entityType(bc.entities[end]) == runType {
+			end++
+		}
+
+		groups = append(groups, bc.extractPrimitiveGroup(bc.entities[start:end]))
+		start = end
 	}
 
 	b := &pb.PrimitiveBlock{
 		Stringtable: &pb.StringTable{
 			S: bc.table.AsArray(),
 		},
-		Primitivegroup:  []*pb.PrimitiveGroup{pg},
+		Primitivegroup:  groups,
 		Granularity:     proto.Int32(Granularity),
 		LatOffset:       proto.Int64(LatOffset),
 		LonOffset:       proto.Int64(LonOffset),
@@ -114,7 +118,22 @@ func (bc *blockContext) extractPrimitiveBlock() *pb.PrimitiveBlock {
 	return b
 }
 
-func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
+// extractPrimitiveGroup returns a group that holds run. All entities in run
+// have the same type.
+func (bc *blockContext) extractPrimitiveGroup(run []model.Entity) *pb.PrimitiveGroup {
+	switch run[0].(type) {
+	case *model.Node:
+		return &pb.PrimitiveGroup{Dense: bc.extractDenseNodes(run)}
+	case *model.Way:
+		return &pb.PrimitiveGroup{Ways: bc.extractWays(run)}
+	case *model.Relation:
+		return &pb.PrimitiveGroup{Relations: bc.extractRelations(run)}
+	default:
+		panic("unknown type")
+	}
+}
+
+func (bc *blockContext) extractDenseNodes(run []model.Entity) *pb.DenseNodes {
 	dn := &pb.DenseNodes{}
 
 	ids := make([]int64, 0)
@@ -130,11 +149,8 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 
 	keyValIDs := make([]int32, 0)
 
-	for _, e := range bc.entities {
-		n, ok := e.(*model.Node)
-		if !ok {
-			continue
-		}
+	for _, e := range run {
+		n := e.(*model.Node) //nolint:forcetypeassert // All entities in run are nodes.
 
 		ids = append(ids, int64(n.ID))
 
@@ -176,14 +192,11 @@ func (bc *blockContext) extractDenseNodes() *pb.DenseNodes {
 	return dn
 }
 
-func (bc *blockContext) extractWays() []*pb.Way {
+func (bc *blockContext) extractWays(run []model.Entity) []*pb.Way {
 	var ways []*pb.Way
 
-	for _, e := range bc.entities {
-		w, ok := e.(*model.Way)
-		if !ok {
-			continue
-		}
+	for _, e := range run {
+		w := e.(*model.Way) //nolint:forcetypeassert // All entities in run are ways.
 
 		var refs []int64
 
@@ -207,14 +220,11 @@ func (bc *blockContext) extractWays() []*pb.Way {
 	return ways
 }
 
-func (bc *blockContext) extractRelations() []*pb.Relation {
+func (bc *blockContext) extractRelations(run []model.Entity) []*pb.Relation {
 	var relations []*pb.Relation
 
-	for _, e := range bc.entities {
-		r, ok := e.(*model.Relation)
-		if !ok {
-			continue
-		}
+	for _, e := range run {
+		r := e.(*model.Relation) //nolint:forcetypeassert // All entities in run are relations.
 
 		keyIDs, valIDs := calcTagIDs(r.Tags, bc.table)
 		memids := make([]int64, len(r.Members))
@@ -257,6 +267,17 @@ func extractTagsAndInfo(strings *Strings, e model.Entity) {
 
 	if info := e.GetInfo(); info != nil {
 		strings.Add(info.User)
+	}
+}
+
+func entityType(e model.Entity) model.EntityType {
+	switch e.(type) {
+	case *model.Way:
+		return model.WAY
+	case *model.Relation:
+		return model.RELATION
+	default:
+		return model.NODE
 	}
 }
 

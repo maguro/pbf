@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"m4o.io/pbf/v2/model"
 )
 
@@ -235,5 +238,66 @@ func TestRoundTripPreservesOsmosisReplicationTimestamp(t *testing.T) {
 
 	if got := dec.Header.OsmosisReplicationTimestamp; !got.Equal(want) {
 		t.Fatalf("replication timestamp = %v, want %v", got, want)
+	}
+}
+
+func TestEncoderKeepsCallerOrder(t *testing.T) {
+	t.Parallel()
+
+	info := func() *model.Info {
+		return &model.Info{Timestamp: time.Unix(1_700_000_000, 0).UTC(), Visible: true}
+	}
+
+	want := []model.Entity{
+		&model.Relation{ID: 1, Info: info()},
+		&model.Node{ID: 1, Info: info()},
+		&model.Way{ID: 1, Info: info()},
+		&model.Node{ID: 2, Info: info()},
+		&model.Node{ID: 3, Info: info()},
+		&model.Relation{ID: 2, Info: info()},
+		&model.Way{ID: 2, Info: info()},
+	}
+
+	encode := func() []byte {
+		var encoded bytes.Buffer
+
+		enc, err := NewEncoder(&encoded)
+		require.NoError(t, err)
+
+		for _, entity := range want {
+			require.NoError(t, enc.Encode(entity))
+		}
+
+		enc.Close()
+
+		return encoded.Bytes()
+	}
+
+	encoded := encode()
+	assert.Equal(t, encoded, encode(), "two encodes of the same entities give different bytes")
+
+	dec, err := NewDecoder(context.Background(), bytes.NewReader(encoded))
+	require.NoError(t, err)
+
+	defer dec.Close()
+
+	var got []model.Entity
+
+	for {
+		batch, err := dec.Decode()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		require.NoError(t, err)
+
+		got = append(got, batch...)
+	}
+
+	require.Len(t, got, len(want))
+
+	for i := range want {
+		assert.IsType(t, want[i], got[i], "entity %d", i)
+		assert.Equal(t, want[i].GetID(), got[i].GetID(), "entity %d", i)
 	}
 }

@@ -58,8 +58,8 @@ func Header() model.Header {
 	}
 }
 
-// Cases returns the cases in the order that the generator encodes them.
-// Within one entity type, the decoder returns the entities in this order.
+// Cases returns the cases in the order that the generator encodes them. The
+// decoder returns the entities in this order.
 //
 //nolint:funlen // The function is a table of cases.
 func Cases() []Case {
@@ -220,6 +220,13 @@ func Cases() []Case {
 			ID:     "R5b",
 			Covers: "The second of two relations with the same ID.",
 			Entity: &model.Relation{ID: 5, Info: zero(), Tags: map[string]string{keyCopy: "2"}},
+		},
+
+		{
+			ID: "M1",
+			Covers: "A node after the relations. The block holds a second dense group, and the dense ID " +
+				"deltas of that group start from zero again.",
+			Entity: &model.Node{ID: 11, Info: full(), Tags: map[string]string{"after": "relations"}},
 		},
 	}
 }

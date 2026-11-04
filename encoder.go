@@ -23,6 +23,12 @@ const (
 )
 
 // Encoder encodes OpenStreetMap PBF data to an output stream.
+//
+// The encoder writes the entities in the order that the caller gives them,
+// and it does not sort them. Thus a file is sorted only if the caller gives
+// sorted entities. To declare that the entities are sorted by type and then by
+// ID, add the optional feature "Sort.Type_then_ID" with WithOptionalFeatures.
+// The encoder does not check that feature.
 type Encoder struct {
 	Header   model.Header
 	Entities chan<- []model.Entity

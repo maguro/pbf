@@ -38,6 +38,7 @@ case. A failure names the case ID.
 | R3 | Relation with member IDs that make the member delta wrap |
 | R4 | Relation with the maximum ID and a missing member |
 | R5a, R5b | Two relations with the same ID |
+| M1 | Node after the relations: a second dense group in the same block |
 | H1 | Header with each settable field not at its default |
 | H2 | Header bounding box equal to the node extent |
 
@@ -48,7 +49,7 @@ Not in the file:
 | Entity without Info | The encoder panics. #13 |
 | Dense nodes without metadata | The decoder panics. #14 |
 | Deleted entities (`Visible: false`) | The encoder does not write history files. #24 |
-| Non-dense nodes, several primitive groups in a block | The encoder does not write them. |
+| Non-dense nodes | The encoder does not write them. |
 | Compressions other than ZLIB | The encoder writes ZLIB by default. |
 
 To write the file again after a change to the cases:
@@ -57,5 +58,4 @@ To write the file again after a change to the cases:
 go run ./internal/tools/edgecases -o testdata/edge-cases.osm.pbf
 ```
 
-Two runs give files with different bytes, because the encoder writes the
-blocks of each entity type in any order. The entities are the same.
+Each run writes a file with the same bytes.
