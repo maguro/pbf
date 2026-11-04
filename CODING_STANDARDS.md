@@ -90,12 +90,23 @@ Document all exported types, funcs, vars, and consts with Go doc comments.
 Document exported interface methods with concise behavior contracts: inputs,
 outputs and errors, and lifecycle and concurrency semantics where they apply.
 
-A comment states what the code does, how to use it, and why it is the way it is
-when that is not obvious: an invariant, a constraint of a format or a
-dependency, a consequence the caller must know. Keep each reason to a sentence.
-For non-obvious behavior, such as concurrency, ownership, lifecycle, and
-invariants, add a concise comment at the point of use. Do not add comments that
-only restate the code.
+A comment states what the code does and how to use it: the purpose, the
+parameters, the return values, usage notes, or a bare fact. A bare fact can be
+an invariant, a constraint of a format or a dependency, or a consequence that
+the caller must know. For non-obvious behavior, such as concurrency, ownership,
+lifecycle, and invariants, add a concise comment at the point of use. Do not add
+comments that only restate the code.
+
+**Never restate rationale.** A comment never says why the authors made a design
+decision. Write no "because X" and no "so that Y". The reason goes in the commit
+message, or in the design docs that `AGENTS.md` names. Do not cite a design doc
+by number or by section as the reason, because the citation becomes wrong when
+the docs change. A bare pointer to the design docs is allowed only in the doc
+comment of an `internal` package.
+
+**Treat the urge to write a reason as a gap.** If a comment needs a reason to
+make sense, the design docs do not record that decision. Tell the user, and
+offer to write the design doc. Do not write the reason in the comment.
 
 **Anything that is only true relative to an earlier state of the code belongs in
 the commit message.** What the code did before, what was tried, which
