@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pierrec/lz4"
@@ -19,6 +20,20 @@ import (
 )
 
 var ErrUnknownCompressionType = errors.New("unknown blob compression type")
+
+// zstdDecoders holds idle zstd decoders. A decoder keeps its history buffer
+// when it goes back to the pool. A decoder in the pool decodes in the goroutine
+// that calls it. It starts no goroutines.
+var zstdDecoders = sync.Pool{
+	New: func() any {
+		d, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
+		if err != nil {
+			panic(err)
+		}
+
+		return d
+	},
+}
 
 // unpack uncompresses the blob.
 //
@@ -44,7 +59,13 @@ func unpack(buf *core.PooledBuffer, blob *pb.Blob) ([]byte, error) {
 		}
 	case *pb.Blob_ZstdData:
 		factory = func(b *pb.Blob) (io.Reader, error) {
-			return zstd.NewReader(bytes.NewReader(b.GetZstdData()))
+			d := zstdDecoders.Get().(*zstd.Decoder) //nolint:forcetypeassert // The pool holds only decoders.
+
+			if err := d.Reset(bytes.NewReader(b.GetZstdData())); err != nil {
+				return nil, fmt.Errorf("could not reset zstd decoder: %w", err)
+			}
+
+			return d, nil
 		}
 	default:
 		return nil, ErrUnknownCompressionType
@@ -60,6 +81,10 @@ func unpack(buf *core.PooledBuffer, blob *pb.Blob) ([]byte, error) {
 		return nil, fmt.Errorf("unpacker factory error: %w", err)
 	}
 
+	if d, ok := r.(*zstd.Decoder); ok {
+		defer releaseZstdDecoder(d)
+	}
+
 	if n, err := buf.ReadFrom(r); err != nil {
 		return nil, fmt.Errorf("unpacker read error: %w", err)
 	} else if n != int64(blob.GetRawSize()) {
@@ -67,4 +92,12 @@ func unpack(buf *core.PooledBuffer, blob *pb.Blob) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// releaseZstdDecoder clears the stream of d. Then releaseZstdDecoder puts d
+// back in the pool.
+func releaseZstdDecoder(d *zstd.Decoder) {
+	_ = d.Reset(nil)
+
+	zstdDecoders.Put(d)
 }
