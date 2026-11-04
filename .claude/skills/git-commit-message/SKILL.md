@@ -32,7 +32,8 @@ Return **only** the commit message text in this structure:
 2. Subject line should be ≤ 50 characters (hard max 72).
 3. Capitalize the subject line.
 4. Do not end the subject with a period.
-5. Use the imperative mood (“Add…”, “Fix…”, “Remove…”).
+5. Use the imperative mood (“Add…”, “Fix…”, “Remove…”). The subject
+   must complete “If applied, this commit will <subject>” (cbea.ms rule 5).
 6. Wrap body text at 72 characters.
 7. Body should explain **what and why**, not how.
 8. Body defaults to one short paragraph, 2–4 sentences. A second
@@ -45,7 +46,9 @@ Return **only** the commit message text in this structure:
 
 1. Identify the single primary purpose of the change.
 2. Draft 2–3 candidate subject lines and choose the best.
-3. Write the subject as an imperative outcome statement.
+3. Write the subject as an imperative that names what the commit
+   changes, not how the code behaves afterward. For a bug fix, name
+   the fix.
 4. Include a body if rationale or behavior change needs explanation.
 5. Add issue references only if explicitly present in context.
 
@@ -76,6 +79,10 @@ Return **only** the commit message text in this structure:
 - Subject starts lowercase → fix
 - Subject ends with “.” → remove
 - Subject is past tense → convert to imperative
+- Commit fixes a bug or brings back lost behavior, but the subject
+  states that behavior as if it always held (e.g. “Keep X”) → name
+  the fix: “Restore X” only if the context shows an earlier commit
+  had X; otherwise “Fix …”. Applies to the subject only.
 - Subject > 72 chars → shorten
 - Body lines > 72 chars → reflow
 - Body fails an `asd-ste100` check → rewrite
@@ -87,6 +94,10 @@ Return **only** the commit message text in this structure:
 - Body has a sentence per subject-line component → merge into one sentence naming what ties them together
 
 ## Examples
+
+Bug fix ("Keep file order in the decoder output" hides the fix):
+
+Restore file order in the decoder output
 
 Simple:
 
