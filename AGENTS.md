@@ -16,6 +16,15 @@ Use these skills from `.claude/skills/` when the task matches:
 | `go-benchmarks` | Changing a hot path listed below |
 | `git-commit-message` | Writing a commit message |
 | `asd-ste100` | Writing or checking a code comment or a commit body |
+| `adr-writer` | Writing an ADR, or finishing one drafted by hand |
+
+`.claude/workflows/` holds the `adr-validate` and `adr-validate-lite` workflows.
+They run a final adversarial review of an ADR in `docs/adr/`.
+
+## Design docs
+
+`docs/adr/` holds the design docs of this repo. Each design decision and its
+reasons go in an ADR there.
 
 ## Project overview
 
