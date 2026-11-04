@@ -10,6 +10,7 @@ are intended to preserve design rationale for future maintainers and reviewers.
 
 | ADR | Title | Status |
 | --- | --- | --- |
+| [ADR-001](ADR-001-encoder-keeps-caller-order.md) | The Encoder Keeps the Caller's Entity Order | Proposed |
 
 ## Conventions
 
