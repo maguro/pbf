@@ -26,13 +26,19 @@ type Info struct {
 	Visible bool
 }
 
+// Entity is a Node, a Way, or a Relation. No other type can implement it.
 type Entity interface {
 	isEntity() // prevents extensions
 
+	// GetID returns the ID of the entity.
 	GetID() ID
 
+	// GetTags returns the tags of the entity. The returned map is the map
+	// of the entity, not a copy. It can be nil.
 	GetTags() map[string]string
 
+	// GetInfo returns the Info of the entity. It is nil if the entity has
+	// no Info.
 	GetInfo() *Info
 }
 
@@ -52,14 +58,18 @@ type Node struct {
 
 var _ Entity = Node{}
 
+// GetID returns the ID of the node. It implements Entity.
 func (r Node) GetID() ID {
 	return r.ID
 }
 
+// GetTags returns the Tags of the node. It implements Entity.
 func (r Node) GetTags() map[string]string {
 	return r.Tags
 }
 
+// GetInfo returns the Info of the node. It can be nil. It implements
+// Entity.
 func (r Node) GetInfo() *Info {
 	return r.Info
 }
@@ -76,14 +86,18 @@ type Way struct {
 
 var _ Entity = Way{}
 
+// GetID returns the ID of the way. It implements Entity.
 func (w Way) GetID() ID {
 	return w.ID
 }
 
+// GetTags returns the Tags of the way. It implements Entity.
 func (w Way) GetTags() map[string]string {
 	return w.Tags
 }
 
+// GetInfo returns the Info of the way. It can be nil. It implements
+// Entity.
 func (w Way) GetInfo() *Info {
 	return w.Info
 }
@@ -104,7 +118,9 @@ const (
 	RELATION
 )
 
-// Member represents an entity that.
+// Member is one entity in the member list of a Relation. ID and Type
+// identify the entity. Role states the function of the entity in the
+// relation, for example "outer" or "inner". Role can be empty.
 type Member struct {
 	ID   ID
 	Type EntityType
@@ -122,14 +138,18 @@ type Relation struct {
 
 var _ Entity = Relation{}
 
+// GetID returns the ID of the relation. It implements Entity.
 func (r Relation) GetID() ID {
 	return r.ID
 }
 
+// GetTags returns the Tags of the relation. It implements Entity.
 func (r Relation) GetTags() map[string]string {
 	return r.Tags
 }
 
+// GetInfo returns the Info of the relation. It can be nil. It implements
+// Entity.
 func (r Relation) GetInfo() *Info {
 	return r.Info
 }
