@@ -26,14 +26,14 @@ type Info struct {
 	Visible bool
 }
 
-// Entity is a Node, a Way, or a Relation. No other type can implement it.
+// Entity is a Node, a Way, or a Relation. A type outside package model cannot implement it.
 type Entity interface {
 	isEntity() // prevents extensions
 
 	// GetID returns the ID of the entity.
 	GetID() ID
 
-	// GetTags returns the tags of the entity. The returned map is the map
+	// GetTags returns the Tags of the entity. The returned map is the map
 	// of the entity, not a copy. It can be nil.
 	GetTags() map[string]string
 
@@ -68,8 +68,7 @@ func (r Node) GetTags() map[string]string {
 	return r.Tags
 }
 
-// GetInfo returns the Info of the node. It can be nil. It implements
-// Entity.
+// GetInfo returns the Info of the node. It implements Entity.
 func (r Node) GetInfo() *Info {
 	return r.Info
 }
@@ -96,8 +95,7 @@ func (w Way) GetTags() map[string]string {
 	return w.Tags
 }
 
-// GetInfo returns the Info of the way. It can be nil. It implements
-// Entity.
+// GetInfo returns the Info of the way. It implements Entity.
 func (w Way) GetInfo() *Info {
 	return w.Info
 }
@@ -148,8 +146,7 @@ func (r Relation) GetTags() map[string]string {
 	return r.Tags
 }
 
-// GetInfo returns the Info of the relation. It can be nil. It implements
-// Entity.
+// GetInfo returns the Info of the relation. It implements Entity.
 func (r Relation) GetInfo() *Info {
 	return r.Info
 }
