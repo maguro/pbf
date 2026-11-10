@@ -14,7 +14,17 @@ import (
 	"m4o.io/pbf/v2/internal/encoder"
 )
 
+// BlobCompression is the compression algorithm of the PBF blobs.
+// It is the type of the WithCompression option.
+type BlobCompression = encoder.BlobCompression
+
 const (
+	RAW  BlobCompression = encoder.RAW
+	ZLIB BlobCompression = encoder.ZLIB
+	LZMA BlobCompression = encoder.LZMA
+	LZ4  BlobCompression = encoder.LZ4
+	ZSTD BlobCompression = encoder.ZSTD
+
 	DefaultBlobCompression = encoder.ZLIB
 
 	tempFileName = "entities.pbf"
