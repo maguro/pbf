@@ -46,5 +46,5 @@ jobs:
           # Do not allow commands that run PR code, such as make test. A
           # PR from a fork could read the API key from the job.
           claude_args: |
-            --allowedTools "Bash(gh issue list:*),Bash(gh issue view:*)"
+            --allowedTools "Bash(gh issue list:*),Bash(gh issue view:*),Bash(git log:*)"
             --append-system-prompt "Follow AGENTS.md and CODING_STANDARDS.md. Post review findings as PR comments."
