@@ -126,3 +126,70 @@ func TestExtractPrimitiveBlockGroupsRunsInOrder(t *testing.T) {
 
 	assert.Equal(t, []int64{5}, groups[3].GetDense().GetId())
 }
+
+func TestNewBlockContextNodeWithNilInfo(t *testing.T) {
+	t.Parallel()
+
+	entities := []model.Entity{
+		&model.Node{ID: 1, Info: nil},
+	}
+	require.NotPanics(t, func() {
+		bc := newBlockContext(entities)
+		require.NotNil(t, bc)
+	})
+}
+
+func TestExtractDenseNodesWithNilInfo(t *testing.T) {
+	t.Parallel()
+
+	entities := []model.Entity{
+		&model.Node{ID: 1, Lat: 10.0, Lon: 20.0, Info: nil},
+		&model.Node{ID: 2, Lat: 10.5, Lon: 20.5, Info: nil},
+	}
+
+	bc := newBlockContext(entities)
+	dense := bc.extractDenseNodes(entities)
+	require.NotNil(t, dense)
+	assert.Nil(t, dense.Denseinfo)
+	assert.Equal(t, []int64{1, 1}, dense.GetId())
+}
+
+func TestExtractDenseNodesWithMixedInfo(t *testing.T) {
+	t.Parallel()
+
+	entities := []model.Entity{
+		&model.Node{ID: 1, Lat: 10.0, Lon: 20.0, Info: nil},
+		&model.Node{ID: 2, Lat: 10.5, Lon: 20.5, Info: &model.Info{Version: 3, User: "bob"}},
+	}
+
+	bc := newBlockContext(entities)
+	dense := bc.extractDenseNodes(entities)
+	require.NotNil(t, dense)
+	require.NotNil(t, dense.Denseinfo)
+	assert.Equal(t, []int32{0, 3}, dense.GetDenseinfo().GetVersion())
+}
+
+func TestToInfoPbNil(t *testing.T) {
+	t.Parallel()
+
+	strings := NewStrings()
+	table := strings.CalcTable()
+	assert.Nil(t, toInfoPb(nil, table))
+}
+
+func TestExtractWaysAndRelationsNilInfo(t *testing.T) {
+	t.Parallel()
+
+	entities := []model.Entity{
+		&model.Way{ID: 100, NodeIDs: []model.ID{1, 2}, Info: nil},
+		&model.Relation{ID: 200, Info: nil},
+	}
+
+	bc := newBlockContext(entities)
+	block := bc.extractPrimitiveBlock()
+	require.NotNil(t, block)
+	groups := block.GetPrimitivegroup()
+	require.Len(t, groups, 2)
+	assert.Nil(t, groups[0].GetWays()[0].GetInfo())
+	assert.Nil(t, groups[1].GetRelations()[0].GetInfo())
+}
