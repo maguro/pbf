@@ -73,11 +73,8 @@ func newBlockContext(entities []model.Entity) *blockContext {
 	for _, e := range entities {
 		extractTagsAndInfo(strings, e)
 
-		switch v := e.(type) {
-		case *model.Relation:
+		if v, ok := e.(*model.Relation); ok {
 			extractMemberRoles(strings, v)
-		case *model.Node:
-			strings.Add(v.GetInfo().User)
 		}
 	}
 
@@ -149,6 +146,14 @@ func (bc *blockContext) extractDenseNodes(run []model.Entity) *pb.DenseNodes {
 
 	keyValIDs := make([]int32, 0)
 
+	hasInfo := false
+	for _, e := range run {
+		if e.GetInfo() != nil {
+			hasInfo = true
+			break
+		}
+	}
+
 	for _, e := range run {
 		n := e.(*model.Node) //nolint:forcetypeassert // All entities in run are nodes.
 
@@ -162,12 +167,22 @@ func (bc *blockContext) extractDenseNodes(run []model.Entity) *pb.DenseNodes {
 		lats = append(lats, model.ToCoordinate(LatOffset, Granularity, lat))
 		lons = append(lons, model.ToCoordinate(LonOffset, Granularity, lon))
 
-		info := n.GetInfo()
-		versions = append(versions, info.Version)
-		uids = append(uids, int32(info.UID))
-		ts = append(ts, fromTimestamp(DateGranularityMs, info.Timestamp))
-		cs = append(cs, info.Changeset)
-		usids = append(usids, bc.table.IndexOf(info.User))
+		if hasInfo {
+			info := n.GetInfo()
+			if info != nil {
+				versions = append(versions, info.Version)
+				uids = append(uids, int32(info.UID))
+				ts = append(ts, fromTimestamp(DateGranularityMs, info.Timestamp))
+				cs = append(cs, info.Changeset)
+				usids = append(usids, bc.table.IndexOf(info.User))
+			} else {
+				versions = append(versions, 0)
+				uids = append(uids, 0)
+				ts = append(ts, 0)
+				cs = append(cs, 0)
+				usids = append(usids, bc.table.IndexOf(""))
+			}
+		}
 
 		kIDs, vIDs := calcTagIDs(n.Tags, bc.table)
 		for i, k := range kIDs {
@@ -178,12 +193,14 @@ func (bc *blockContext) extractDenseNodes(run []model.Entity) *pb.DenseNodes {
 	}
 
 	dn.Id = calcDeltas(ids)
-	dn.Denseinfo = &pb.DenseInfo{
-		Version:   calcDeltas(versions),
-		Timestamp: calcDeltas(ts),
-		Changeset: calcDeltas(cs),
-		Uid:       calcDeltas(uids),
-		UserSid:   calcDeltas(usids),
+	if hasInfo {
+		dn.Denseinfo = &pb.DenseInfo{
+			Version:   calcDeltas(versions),
+			Timestamp: calcDeltas(ts),
+			Changeset: calcDeltas(cs),
+			Uid:       calcDeltas(uids),
+			UserSid:   calcDeltas(usids),
+		}
 	}
 	dn.Lat = calcDeltas(lats)
 	dn.Lon = calcDeltas(lons)
@@ -314,6 +331,10 @@ func calcTagIDs(tags map[string]string, table *Table) (keyIDs, valIDs []uint32) 
 }
 
 func toInfoPb(info *model.Info, table *Table) *pb.Info {
+	if info == nil {
+		return nil
+	}
+
 	pbInfo := &pb.Info{
 		Version:   proto.Int32(info.Version),
 		Timestamp: proto.Int64(fromTimestamp(DateGranularityMs, info.Timestamp)),
