@@ -27,6 +27,14 @@ that `go.mod` declares.
 - Do not combine multiple fixes in one change, even when they share a goal.
 - Keep diffs small enough to review end-to-end in a single pass.
 - Keep commit boundaries aligned with that single fix.
+- A review of a pull request can ask for changes. Make these changes in the
+  original commits of the pull request. Do not add commits that fix the pull
+  request. Over time, commits that fix a pull request become noise. They can
+  also make it hard to see what to roll back later.
+- Do not use [Conventional Commits](https://www.conventionalcommits.org/). Do
+  not start a commit subject with any prefix, such as `fix:` or `decoder:`.
+  The number of prefixes increases over time. Prefixes that were correct some
+  years ago are often not correct now.
 - Stop after each change for review before continuing.
 - Do not use staging or cherry-pick style split workflows unless explicitly
   requested.
